@@ -18,7 +18,7 @@ namespace KHash.Compiler
         OptionFactory optionFactory;
         Buffer outputBuffer;
 
-        string rawLines;
+        string rawLines = "";
         StreamReader intialFile;
 
         public Compiler( IEnvironment env, ref Buffer output )
@@ -48,12 +48,11 @@ namespace KHash.Compiler
                 }
                 //Attempt to get string from index.khash
                 string pathToIndex = optionFactory.GetIndexKhashFilePath();
-                if( File.Exists( pathToIndex ) == false )
+                if( File.Exists( pathToIndex ) == true )
                 {
-                    throw new InvalidOptionException( "Cannot parse index file, file could not be found in:" + pathToIndex );
+                    intialFile = new StreamReader( pathToIndex );
+                    rawLines = intialFile.ReadToEnd();
                 }
-                intialFile = new StreamReader( pathToIndex );
-                rawLines = intialFile.ReadToEnd();
             }
         }
 
@@ -62,11 +61,10 @@ namespace KHash.Compiler
             //Create tokens using the lexer
             string rawLines = @"
 int i = 4; 
-int function bob()
-{ 
-    return i + 5; 
-} 
-send bob();
+while( 1==1 )
+{
+send 5;
+}
 ";
 
             List<Token> tokens = new Lexer.Lexer( rawLines ).Lex().ToList();

@@ -54,7 +54,7 @@ namespace KHash.Compiler.Lexer
         CaseOf,
         Break,
         Comma,
-        Return
-
+        Return,
+        While
     }
 }
