@@ -81,18 +81,18 @@ bool = true/false;
 ```
 
 ## Math Operators
-`+` Plus
-`-` Minus
-`/` Divide
-`*` Multiply
+`+` Plus<br/>
+`-` Minus<br/>
+`/` Divide<br/>
+`*` Multiply<br/>
 
 ### Comparison Operators
-`==` Equals
-`!=` Not equals
-`>` Greater than
-`<` Less than
-`>=` Greater than or equal
-`<=` Less than or equal
+`==` Equals<br/>
+`!=` Not equals<br/>
+`>` Greater than<br/>
+`<` Less than<br/>
+`>=` Greater than or equal<br/>
+`<=` Less than or equal<br/>
 
 ### Keywords
 `send` Prints to the output buffer
