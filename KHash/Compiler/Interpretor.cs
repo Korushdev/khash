@@ -144,10 +144,8 @@ namespace KHash.Compiler
         {
             int iteration = 0;
             int maxIteration = Convert.ToInt32( optionFactory.GetOption( OptionKey.KHASH_MAX_ITERATIONS ) );
-            var expressionResult = Execute( condition.Expression );
-            bool passes = Convert.ToBoolean( expressionResult  );
-            
-            while ( passes && 
+          
+            while ( Convert.ToBoolean( Execute( condition.Expression ) ) && 
                   ( maxIteration > 0 ? iteration <= maxIteration : true ))
             {
                 Execute( condition.Body );
@@ -234,7 +232,16 @@ namespace KHash.Compiler
 
         public object GetDeclaredWord( AST ast )
         {
-            var item = ast.Token.TokenValue;
+            string item = ast.Token.TokenValue;
+            string lowerCaseWord = item.ToLower();
+            switch( lowerCaseWord )
+            {
+                case "true":
+                    return true;
+                case "false":
+                    return false;
+            }
+
 
             var current = container.Current;
 
@@ -258,6 +265,11 @@ namespace KHash.Compiler
 
             switch( ast.Token.TokenType )
             {
+                case TokenType.Equals:
+
+                    container.SetMemoryValue( ast.Left, rightValue );
+                    //Assign( lhs, Exec( rhs ), itemSpace != null ? itemSpace.Memory : null );
+                    break;
                 case TokenType.Match:
                     return leftValue == rightValue;
                 case TokenType.NotMatch:

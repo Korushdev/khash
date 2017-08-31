@@ -61,9 +61,10 @@ namespace KHash.Compiler
             //Create tokens using the lexer
             string rawLines = @"
 int i = 4; 
-while( 1==1 )
+while( i < 10 )
 {
-send 5;
+i = i + 1;
+send 'done';
 }
 ";
 
