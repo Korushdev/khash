@@ -1,6 +1,6 @@
 ## Synopsis
 
-KHash is a toy strong typed interpreted language written on top of C#. At this stage of development the language is HIGHLY EXPERIMENTAL and should not be used for real projects!
+KHash is a strong typed interpreted language written on top of C#. At this stage of development the language is HIGHLY EXPERIMENTAL and should not be used for real projects!
 
 ## Installation
 
@@ -67,7 +67,7 @@ switch( a )
         send "is 5";
         break;
 }
-
+```
 
 ## Language reference
 
