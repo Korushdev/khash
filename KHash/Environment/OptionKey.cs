@@ -19,6 +19,8 @@ namespace KHash.Environment
         //index.khash
         KHASH_INDEX_FILENAME,
         //KHash default start path where index.khash can be found
-        KHASH_BASE_PATH
+        KHASH_BASE_PATH,
+        //KHash prevent while statements iterating indefinately, setting to 0 will allow different
+        KHASH_MAX_ITERATIONS
     }
 }

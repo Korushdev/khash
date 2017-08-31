@@ -26,6 +26,7 @@ namespace KHash.Spec
             new MatchKeyword(TokenType.CaseOf, "caseOf"),
             new MatchKeyword(TokenType.Break, "break"),
             new MatchKeyword(TokenType.Return, "return"),
+            new MatchKeyword(TokenType.While, "while")
         };
 
         public static List<IMatcher> SpecialCharacters = new List<IMatcher>()

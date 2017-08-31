@@ -17,7 +17,8 @@ namespace KHash.Compiler.Parser.AST
         VarDeclr,
         Conditional,
         Switch,
-        Return
+        Return,
+        While
     }
 
     public abstract class AST

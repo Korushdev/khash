@@ -1,6 +1,7 @@
 ﻿using KHash.Compiler.Lexer;
 using KHash.Compiler.Parser.AST;
 using KHash.Compiler.Scope;
+using KHash.Environment;
 using KHash.Exceptions;
 using KHash.Helpers;
 using System;
@@ -15,10 +16,12 @@ namespace KHash.Compiler
     {
         private OutputBuffer.OutputBuffer outputBuffer;
         private Container container;
+        private OptionFactory optionFactory;
 
         public Interpretor( OutputBuffer.OutputBuffer buffer )
         {
             this.outputBuffer = buffer;
+            optionFactory = Factory.GetOptionFactory();
         }
 
         public void Start( AST ast )
@@ -55,6 +58,9 @@ namespace KHash.Compiler
                         break;
                     case AstTypes.Switch:
                         Switch( (Switch)ast );
+                        break;
+                    case AstTypes.While:
+                        While( (While)ast );
                         break;
                     case AstTypes.MethodDeclr:
                         MethodDecleration( (MethodDeclr)ast );
@@ -133,6 +139,22 @@ namespace KHash.Compiler
                 //Execute else statement
             }
         }
+
+        public void While( While condition )
+        {
+            int iteration = 0;
+            int maxIteration = Convert.ToInt32( optionFactory.GetOption( OptionKey.KHASH_MAX_ITERATIONS ) );
+            var expressionResult = Execute( condition.Expression );
+            bool passes = Convert.ToBoolean( expressionResult  );
+            
+            while ( passes && 
+                  ( maxIteration > 0 ? iteration <= maxIteration : true ))
+            {
+                Execute( condition.Body );
+                iteration++;
+            }
+        }
+        
 
         public void Switch( Switch switchAST )
         {

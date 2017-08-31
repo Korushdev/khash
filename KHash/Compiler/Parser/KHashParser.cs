@@ -83,6 +83,7 @@ namespace KHash.Compiler.Parser
                 .Or( SendStatement )
                 .Or( ConditionalIf )
                 .Or( Switch )
+                .Or( While )
                 .Or( Return )
                 .Or( Expression );
 
@@ -140,6 +141,23 @@ namespace KHash.Compiler.Parser
 
             tokenStream.Take( TokenType.CloseParenth );
             return args;
+        }
+
+        private AST.AST While()
+        {
+            if(tokenStream.Current.TokenType == TokenType.While)
+            {
+                return tokenStream.Capture( ParseWhile );
+            }
+
+            return null;
+        }
+
+        private AST.AST ParseWhile()
+        {
+            var expressionAndStatements = GetExpressionAndStatements( TokenType.While );
+
+            return new While( new Token( TokenType.While ), expressionAndStatements.Item1, expressionAndStatements.Item2 );
         }
 
         private AST.AST ConditionalIf()

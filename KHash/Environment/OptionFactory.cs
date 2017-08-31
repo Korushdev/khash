@@ -34,6 +34,8 @@ namespace KHash.Environment
             this.optionDict.Add( OptionKey.KHASH_BASE_PATH, FilePath.JoinPaths( environment.GetCurrentWorkingDirectory() ) );
             this.optionDict.Add( OptionKey.KHASH_INDEX_FILENAME, "index.khash" );
 
+            this.optionDict.Add( OptionKey.KHASH_MAX_ITERATIONS, "100" );
+
         }
 
         private void ParseClientSettings()
