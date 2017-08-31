@@ -72,28 +72,30 @@ switch( a )
 ## Language reference
 
 ### Variable types
+```
 int = 1;
 float = 2.5;
 double = 2.8975287349723;
 decimal = 4.329035809238509;
 bool = true/false;
+```
 
 ## Math Operators
-+ Plus
-- Minus
-/ Divide
-* Multiply
+`+` Plus
+`-` Minus
+`/` Divide
+`*` Multiply
 
 ### Comparison Operators
-== Equals
-!= Not equals
-> Greater than
-< Less than
->= Greater than or equal
-<= Less than or equal
+`==` Equals
+`!=` Not equals
+`>` Greater than
+`<` Less than
+`>=` Greater than or equal
+`<=` Less than or equal
 
 ### Keywords
-send Prints to the output buffer
+`send` Prints to the output buffer
 
 
 ## Tests
