@@ -60,7 +60,14 @@ namespace KHash.Compiler
         public void Process()
         {
             //Create tokens using the lexer
-            //string rawLines = @"int function bob(){ send 3;} bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();bob();";
+            string rawLines = @"
+int i = 4; 
+int function bob()
+{ 
+    return i + 5; 
+} 
+send bob();
+";
 
             List<Token> tokens = new Lexer.Lexer( rawLines ).Lex().ToList();
             

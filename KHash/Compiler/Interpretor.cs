@@ -66,11 +66,14 @@ namespace KHash.Compiler
                             return methodReturnVal;
                         }
                         break;
+                    case AstTypes.Return:
+                        Return( (Return)ast );
+                        break;
 
                 }
             }catch( Exception e )
             {
-                if( e is InterpretorException )
+                if( e is InterpretorException || e is ReturnValueException)
                 {
                     throw e;
                 }
@@ -97,10 +100,24 @@ namespace KHash.Compiler
             if( value != null && value is MethodDeclr )
             {
                 MethodDeclr declaredMethod = (MethodDeclr)value;
-                var returnedValue = Execute( declaredMethod.Body );
-
+               
+                try
+                {
+                    Execute( declaredMethod.Body );
+                }
+                catch( ReturnValueException returnValueException )
+                {
+                    return returnValueException.Value;
+                }
             }
             return null;
+        }
+
+        public dynamic Return( Return ast )
+        {
+            var returnVal = Execute( ast.ReturnExpression );
+
+            throw new ReturnValueException( returnVal );
         }
 
         public void Condition( Conditional condition )
@@ -261,6 +278,15 @@ namespace KHash.Compiler
             }
 
             return null;
+        }
+    }
+
+    public class ReturnValueException : Exception
+    {
+        public object Value;
+        public ReturnValueException( object val )
+        {
+            Value = val;
         }
     }
 }
