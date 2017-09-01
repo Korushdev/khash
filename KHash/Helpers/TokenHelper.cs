@@ -23,7 +23,7 @@ namespace KHash.Helpers
                 case TokenType.LessThan:
                 case TokenType.GreaterThanOrEqual:
                 case TokenType.LessThanOrEqual:
-                case TokenType.Ampersand:
+                case TokenType.And:
                 case TokenType.Or:
                 case TokenType.Slash:
                     return true;

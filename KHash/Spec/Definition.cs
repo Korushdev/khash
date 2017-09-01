@@ -43,6 +43,7 @@ namespace KHash.Spec
                 new MatchKeyword(TokenType.OpenParenth, "("),
                 new MatchKeyword(TokenType.CloseParenth, ")"),
                 new MatchKeyword(TokenType.Slash, "/"),
+                new MatchKeyword(TokenType.And, "&&"),
                 new MatchKeyword(TokenType.Ampersand, "&"),
                 new MatchKeyword(TokenType.GreaterThan, ">")
                 {

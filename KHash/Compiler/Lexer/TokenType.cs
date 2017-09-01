@@ -29,6 +29,7 @@ namespace KHash.Compiler.Lexer
         CloseParenth,
         Slash,
         Ampersand,
+        And,
         GreaterThan,
         LessThan,
         GreaterThanOrEqual,

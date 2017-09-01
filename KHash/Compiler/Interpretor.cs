@@ -261,19 +261,20 @@ namespace KHash.Compiler
 
             var leftValue = leftExec;
             var rightValue = rightExec;
-            //string returnType = ast.
 
             switch( ast.Token.TokenType )
             {
                 case TokenType.Equals:
 
                     container.SetMemoryValue( ast.Left, rightValue );
-                    //Assign( lhs, Exec( rhs ), itemSpace != null ? itemSpace.Memory : null );
+
                     break;
                 case TokenType.Match:
                     return leftValue == rightValue;
                 case TokenType.NotMatch:
                     return leftValue != rightValue;
+                case TokenType.And:
+                    return leftValue && rightValue;
                 case TokenType.Plus:
                     return leftValue + rightValue;
                 case TokenType.Minus:
