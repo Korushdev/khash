@@ -9,26 +9,59 @@ namespace KHash.Compiler.Scope
 {
     public class Container : BaseScope
     {
-        public BaseScope Current;
+        public InnerScope Global;
+        public InnerScope Current;
 
-        public void AddScope()
+        public Container()
         {
-            Scopes.Add( new InnerScope() );
+            Global = new InnerScope();
+            Current = Global;
         }
-        
+
+        public void StartScope()
+        {
+            InnerScope scope = new InnerScope();
+            Current = scope;
+            Scopes.Add( scope );
+        }
+
+        public void EndScope()
+        {
+            int currentIndex = Scopes.IndexOf( Current );
+
+            Current = null;
+            Scopes.RemoveAt( currentIndex );
+
+            //Reset Current scope to the previous scope in the Scopes List
+            if( currentIndex != 0 )
+            {
+                int resetIndex = currentIndex - 1;
+                Current = Scopes[resetIndex];
+            }
+        }
+
         public object GetMemoryValue( string key )
         {
-            var memoryDict = GetCurrentMemory().Values;
-            if( memoryDict.ContainsKey( key ) )
-            {
-                return memoryDict[key];
-            }
-            return null;   
+            return GetValueFromMemory( GetCurrentMemory(), key );
+        }
+
+        public object GetGlobalMemoryValue( string key )
+        {
+            return GetValueFromMemory( Global.Memory, key );
         }
 
         public object GetMemoryValue( AST ast )
         {
             return GetMemoryValue( ast.Token.TokenValue );
+        }
+
+        private object GetValueFromMemory( Memory memory, string key )
+        {
+            if( memory.Values.ContainsKey( key ) )
+            {
+                return memory.Values[key];
+            }
+            return null;
         }
 
         public void SetMemoryValue( string key, object value )
@@ -45,14 +78,7 @@ namespace KHash.Compiler.Scope
 
         public Memory GetCurrentMemory()
         {
-            if( Current == null )
-            {
-                return Memory;
-            }
-            else
-            {
-                return Current.Memory;
-            }
+            return Current.Memory;
         }
 
     }

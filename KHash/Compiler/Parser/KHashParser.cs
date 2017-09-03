@@ -111,26 +111,21 @@ namespace KHash.Compiler.Parser
             tokenStream.Take( TokenType.Function );
             var functionName = tokenStream.Take( TokenType.Word );
 
-            var arguments = GetArgumentList();
+            var arguments = GetArgumentList( );
 
             var body = GetStatementsInScope( TokenType.LBracket, TokenType.RBracket );
 
             return new MethodDeclr( functionName, type, arguments, body );
         }
 
-        private AST.AST MethodInvoke()
-        {
-            return null;
-        }
-
-        private List<AST.AST> GetArgumentList()
+        private List<AST.AST> GetArgumentList( bool isDecleration = true )
         {
             tokenStream.Take( TokenType.OpenParenth );
 
             List<AST.AST> args = new List<AST.AST>();
             while( tokenStream.Current.TokenType != TokenType.CloseParenth )
             {
-                var argument = VariableDeclaration();
+                var argument = isDecleration ? VariableDeclarationAndAssignment() : InnerStatement();
 
                 if( tokenStream.Current.TokenType == TokenType.Comma )
                 {
@@ -273,26 +268,6 @@ namespace KHash.Compiler.Parser
             return new Return( InnerStatement() );
         }
 
-        private AST.AST VariableDeclarationAndAssignment()
-        {
-            var isVar = tokenStream.Current.TokenType == TokenType.Var;
-
-            if( ( isVar || IsValidMethodReturnType() ) && IsValidVariableName( tokenStream.Peek( 1 ) ) )
-            {
-                var type = tokenStream.Take( tokenStream.Current.TokenType );
-
-                var name = tokenStream.Take( TokenType.Word );
-
-                tokenStream.Take( TokenType.Equals );
-                
-                var expr = InnerStatement();
-                
-                return new VarDeclr( type, name, expr );
-            }
-
-            return null;
-        }
-
         private AST.AST VariableDeclaration()
         {
             if( IsValidMethodReturnType() && IsValidVariableName( tokenStream.Peek( 1 ) ) )
@@ -306,21 +281,30 @@ namespace KHash.Compiler.Parser
 
             return null;
         }
-
-        private AST.AST VariableAssignment()
+        
+        private AST.AST VariableDeclarationAndAssignment()
         {
-            if( IsValidMethodReturnType() && IsValidVariableName( tokenStream.Peek(1) ) )
+            var isVar = tokenStream.Current.TokenType == TokenType.Var;
+
+            if( ( isVar || IsValidMethodReturnType() ) && IsValidVariableName( tokenStream.Peek( 1 ) ) )
             {
+                var type = tokenStream.Take( tokenStream.Current.TokenType );
+
                 var name = tokenStream.Take( TokenType.Word );
 
-                var equals = tokenStream.Take( TokenType.Equals );
+                AST.AST expr = null;
+                if( tokenStream.Current.TokenType == TokenType.Equals )
+                {
+                    tokenStream.Take( TokenType.Equals );
 
-                return new Expr( new Expr( name ), equals, InnerStatement() );
+                    expr = InnerStatement();
+                }
+
+                return new VarDeclr( type, name, expr );
             }
+
             return null;
         }
-
-        
 
         private AST.AST SendStatement()
         {
@@ -461,7 +445,7 @@ namespace KHash.Compiler.Parser
         {
             var nameOfFunction = tokenStream.Take( TokenType.Word );
 
-            var arguments = GetArgumentList();
+            var arguments = GetArgumentList(false);
 
             return new MethodInvoke( nameOfFunction, arguments );
         }

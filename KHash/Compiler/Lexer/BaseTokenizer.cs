@@ -33,6 +33,11 @@ namespace KHash.Compiler.Lexer
             SnapshotIndexes = new Stack<int>();
         }
 
+        public int GetIndex()
+        {
+            return Index;
+        }
+
         private Boolean EOF( int lookahead )
         {
             if( Index + lookahead >= Items.Count )

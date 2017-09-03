@@ -60,7 +60,18 @@ namespace KHash.Compiler
         {
             //Create tokens using the lexer
             string rawLines = @"
-bool i = 1 == 1 || 2==2;
+
+int function cat()
+{
+    return 'cat';
+}
+
+int function dog()
+{
+    return cat();
+}
+
+send dog();
 ";
 
             List<Token> tokens = new Lexer.Lexer( rawLines ).Lex().ToList();

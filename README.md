@@ -69,6 +69,16 @@ switch( a )
 }
 ```
 
+### Ex5 - Function Declaration
+```
+int a = 3;
+int function add( int num )
+{
+	return num + 7;
+}
+send add( a );
+```
+
 ## Language reference
 
 ### Variable types

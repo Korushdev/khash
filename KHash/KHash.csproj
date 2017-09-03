@@ -79,6 +79,8 @@
     <Compile Include="Compiler\Scope\Memory.cs" />
     <Compile Include="Environment\OptionKey.cs" />
     <Compile Include="Exceptions\ExpressionInterpretorException.cs" />
+    <Compile Include="Exceptions\VariableException.cs" />
+    <Compile Include="Exceptions\MethodException.cs" />
     <Compile Include="Exceptions\InterpretorException.cs" />
     <Compile Include="Exceptions\ParserException.cs" />
     <Compile Include="Exceptions\ParserInvalidSyntaxException.cs" />

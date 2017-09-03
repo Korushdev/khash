@@ -27,7 +27,6 @@ namespace KHash.Compiler
         public void Start( AST ast )
         {
             container = new Container();
-
             Execute( ast );
         }
 
@@ -89,7 +88,6 @@ namespace KHash.Compiler
 
         private void ScopeDeclr( ScopeDeclr ast )
         {
-            container.AddScope();
             ast.ScopedStatements.ForEach( statement => Execute( statement ) );
         }
 
@@ -101,18 +99,64 @@ namespace KHash.Compiler
         public dynamic MethodInvoke( MethodInvoke ast )
         {
             var current = container.Current;
-
-            var value = container.GetMemoryValue( ast.Name.TokenValue );
+            var methodName = ast.Name.TokenValue;
+            var value = container.GetMemoryValue( methodName );
+            if( value == null )
+            {
+                value = container.GetGlobalMemoryValue( methodName );
+            }
             if( value != null && value is MethodDeclr )
             {
                 MethodDeclr declaredMethod = (MethodDeclr)value;
-               
+
+                List<KeyValuePair<AST,object>> declaredArgValues = new List<KeyValuePair<AST, object>>();
+                List<object> invokedArgValues = new List<object>();
+                
+                for( int c = 0; c < ast.Arguments.Count(); c++ )
+                {
+                    AST invokeArg = ast.Arguments[c];
+                    var invokeArgVal = Execute( invokeArg );
+                    invokedArgValues.Add( invokeArgVal );
+                }
+
+                //Set scope start here
+                container.StartScope();
+
+
+                //Set default declared method args if they have been assigned a value
+                foreach( VarDeclr methodArg in declaredMethod.Arguments )
+                {
+                    if( methodArg.VariableValue != null )
+                    {
+                        var methodArgVal = Execute( methodArg.VariableValue );
+                        var symbol = methodArg.Token.TokenValue;
+                        container.SetMemoryValue( symbol, TokenHelper.CastByString( methodArg.DeclarationType.Token.TokenValue, methodArgVal ) );
+                    }
+                }
+
+                //Set arg values to scope
+                for( int c = 0; c < invokedArgValues.Count(); c++ )
+                {
+                    var methodArg = (VarDeclr)declaredMethod.Arguments.ElementAtOrDefault( c );
+                    if( methodArg != null )
+                    {
+                        var symbol = methodArg.Token.TokenValue;
+                        container.SetMemoryValue( symbol, TokenHelper.CastByString( methodArg.DeclarationType.Token.TokenValue, invokedArgValues[c] ) );
+                    }else
+                    {
+                        throw new MethodException( String.Format( "Method {0} expects {1} argument(s), you called {0} with {2} ", declaredMethod.Name.TokenValue, declaredMethod.Arguments.Count(), ast.Arguments.Count() ) );
+                    }
+                }
+
+
                 try
                 {
                     Execute( declaredMethod.Body );
+                    container.EndScope();
                 }
                 catch( ReturnValueException returnValueException )
                 {
+                    container.EndScope();
                     return returnValueException.Value;
                 }
             }
@@ -251,7 +295,7 @@ namespace KHash.Compiler
                 return value;
             }
 
-            return null;
+            throw new VariableException( String.Format( "Variable {0} is undefined in current scope", item ) );
         }
 
         private object ApplyOperator( Expr ast, AST declerationType = null )
