@@ -18,7 +18,8 @@ namespace KHash.Compiler.Parser.AST
         Conditional,
         Switch,
         Return,
-        While
+        While,
+        For
     }
 
     public abstract class AST

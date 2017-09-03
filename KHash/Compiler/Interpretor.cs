@@ -55,6 +55,9 @@ namespace KHash.Compiler
                     case AstTypes.Conditional:
                         Condition( (Conditional)ast );
                         break;
+                    case AstTypes.For:
+                        For( (For)ast );
+                        break;
                     case AstTypes.Switch:
                         Switch( (Switch)ast );
                         break;
@@ -184,13 +187,30 @@ namespace KHash.Compiler
             }
         }
 
+        public void For( For condition )
+        {
+            int iteration = 0;
+            int maxIteration = Convert.ToInt32( optionFactory.GetOption( OptionKey.KHASH_MAX_ITERATIONS ) );
+            Execute( condition.InitStatement );
+
+            for( container.GetMemoryValue( condition.InitStatement ); Convert.ToBoolean( Execute( condition.Condition ) ); Execute( condition.IteratedExpression ) )
+            {
+                Execute( condition.Body );
+                iteration++;
+                if( maxIteration > 0 && iteration >= maxIteration )
+                {
+                    break;
+                }
+            }
+        }
+
         public void While( While condition )
         {
             int iteration = 0;
             int maxIteration = Convert.ToInt32( optionFactory.GetOption( OptionKey.KHASH_MAX_ITERATIONS ) );
           
-            while ( Convert.ToBoolean( Execute( condition.Expression ) ) && 
-                  ( maxIteration > 0 ? iteration <= maxIteration : true ))
+            while( Convert.ToBoolean( Execute( condition.Expression ) ) && 
+                 ( maxIteration > 0 ? iteration <= maxIteration : true ))
             {
                 Execute( condition.Body );
                 iteration++;

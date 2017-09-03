@@ -61,6 +61,7 @@
     <Compile Include="Compiler\OutputBuffer\OutputBuffer.cs" />
     <Compile Include="Compiler\Parser\AST\AST.cs" />
     <Compile Include="Compiler\Parser\AST\Case.cs" />
+    <Compile Include="Compiler\Parser\AST\For.cs" />
     <Compile Include="Compiler\Parser\AST\While.cs" />
     <Compile Include="Compiler\Parser\AST\MethodDeclr.cs" />
     <Compile Include="Compiler\Parser\AST\MethodInvoke.cs" />

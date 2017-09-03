@@ -82,6 +82,7 @@ namespace KHash.Compiler.Parser
             var ast = VariableDeclarationAndAssignment()
                 .Or( SendStatement )
                 .Or( ConditionalIf )
+                .Or( For )
                 .Or( Switch )
                 .Or( While )
                 .Or( Return )
@@ -136,6 +137,33 @@ namespace KHash.Compiler.Parser
 
             tokenStream.Take( TokenType.CloseParenth );
             return args;
+        }
+
+        private AST.AST For()
+        {
+            if( tokenStream.Current.TokenType == TokenType.For )
+            {
+                return tokenStream.Capture( ParseFor );
+            }
+            return null;
+        }
+
+        private AST.AST ParseFor()
+        {
+            tokenStream.Take( TokenType.For );
+            tokenStream.Take( TokenType.OpenParenth );
+
+
+            AST.AST initStatement = VariableDeclarationAndAssignment();
+            tokenStream.Take( TokenType.SemiColon );
+            AST.AST condition = Expression();
+            tokenStream.Take( TokenType.SemiColon );
+            AST.AST iterateExpr = Expression();
+
+            tokenStream.Take( TokenType.CloseParenth );
+
+            var body = GetStatementsInScope( TokenType.LBracket, TokenType.RBracket );
+            return new For( initStatement, condition, iterateExpr, body );
         }
 
         private AST.AST While()

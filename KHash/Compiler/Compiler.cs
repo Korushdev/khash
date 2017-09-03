@@ -60,9 +60,10 @@ namespace KHash.Compiler
         {
             //Create tokens using the lexer
             string rawLines = @"
-int a = 5;
-send a--;
+for( int a = 0; a < 3; a++ )
+{
 send a;
+}
 ";
 
             List<Token> tokens = new Lexer.Lexer( rawLines ).Lex().ToList();

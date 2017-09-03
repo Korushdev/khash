@@ -42,7 +42,15 @@ if( isOk == true )
 }
 ```
 
-### Ex3 - While Statement
+### Ex3 - For Statement
+```
+for( int a = 0; a < 5; a++ )
+{
+    send a;
+}
+```
+
+### Ex4 - While Statement
 ```
 int a = 5;
 while( a < 10 )
@@ -52,7 +60,7 @@ while( a < 10 )
 }
 ```
 
-### Ex4 - Switch statement
+### Ex5 - Switch statement
 ```
 int a = 5;
 switch( a )
@@ -69,7 +77,7 @@ switch( a )
 }
 ```
 
-### Ex5 - Function Declaration
+### Ex6 - Function Declaration
 ```
 int a = 3;
 int function add( int num )
