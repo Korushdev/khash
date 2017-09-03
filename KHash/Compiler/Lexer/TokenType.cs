@@ -18,7 +18,9 @@ namespace KHash.Compiler.Lexer
         WhiteSpace,
         EOF,
         LBracket,
-        RBracket,  
+        RBracket,
+        Increment,
+        Decrement,
         Plus,
         Minus,
         Equals,
@@ -56,6 +58,7 @@ namespace KHash.Compiler.Lexer
         Break,
         Comma,
         Return,
-        While
+        While,
+        For
     }
 }

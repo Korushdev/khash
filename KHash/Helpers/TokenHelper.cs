@@ -16,6 +16,8 @@ namespace KHash.Helpers
                 case TokenType.Equals:
                 case TokenType.Match:
                 case TokenType.NotMatch:
+                case TokenType.Increment:
+                case TokenType.Decrement:
                 case TokenType.Plus:
                 case TokenType.Minus:
                 case TokenType.Asterix:
@@ -29,6 +31,22 @@ namespace KHash.Helpers
                     return true;
             }
             return false;
+        }
+
+        public static bool HasNoRightExpression( TokenType type )
+        {
+            switch( type )
+            {
+                case TokenType.Increment:
+                case TokenType.Decrement:
+                    return true;
+            }
+            return false;
+        }
+
+        public static bool HasNoLeftExpression( TokenType type )
+        {
+            return HasNoRightExpression( type );
         }
 
         public static object CastByString( string type, object value )

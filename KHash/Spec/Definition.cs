@@ -26,14 +26,17 @@ namespace KHash.Spec
             new MatchKeyword(TokenType.CaseOf, "caseOf"),
             new MatchKeyword(TokenType.Break, "break"),
             new MatchKeyword(TokenType.Return, "return"),
-            new MatchKeyword(TokenType.While, "while")
+            new MatchKeyword(TokenType.While, "while"),
+            new MatchKeyword(TokenType.For, "for")
         };
 
         public static List<IMatcher> SpecialCharacters = new List<IMatcher>()
         {
                 new MatchKeyword(TokenType.LBracket, "{"),
                 new MatchKeyword(TokenType.RBracket, "}"),
+                new MatchKeyword(TokenType.Increment, "++"),
                 new MatchKeyword(TokenType.Plus, "+"),
+                new MatchKeyword(TokenType.Decrement, "--"),
                 new MatchKeyword(TokenType.Minus, "-"),
                 new MatchKeyword(TokenType.NotMatch, "!="),
                 new MatchKeyword(TokenType.Match, "=="),

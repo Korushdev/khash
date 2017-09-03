@@ -370,6 +370,27 @@ namespace KHash.Compiler.Parser
 
             switch( tokenStream.Current.TokenType )
             {
+                case TokenType.Increment:
+                case TokenType.Decrement:
+                    Func<Func<AST.AST>, Func<AST.AST>, AST.AST> incDecOP = ( leftFunc, rightFunc ) =>
+                    {
+                        var opType = Operator();
+
+                        AST.AST right = null;
+                        right = rightFunc();
+
+                        if( right == null )
+                        {
+                            return null;
+                        }
+
+                        return new Expr( null, opType, right );
+                    };
+
+                    Func<AST.AST> leftOp = () => incDecOP( ExpressionTerminal, Expression );
+
+                    return tokenStream.Capture( leftOp )
+                                      .Or( () => tokenStream.Capture( ExpressionTerminal ) );
                 case TokenType.OpenParenth:
 
                     Func<AST.AST> basicOp = () =>
@@ -414,12 +435,15 @@ namespace KHash.Compiler.Parser
                 }
 
                 var opType = Operator();
-
-                var right = rightFunc();
-
-                if( right == null )
+                AST.AST right = null;
+                if( TokenHelper.HasNoRightExpression( opType.TokenType ) == false )
                 {
-                    return null;
+                    right = rightFunc();
+
+                    if( right == null )
+                    {
+                        return null;
+                    }
                 }
 
                 return new Expr( left, opType, right );

@@ -319,6 +319,46 @@ namespace KHash.Compiler
                     return leftValue != rightValue;
                 case TokenType.And:
                     return leftValue && rightValue;
+                case TokenType.Increment:
+                    //If (post increment ) i.e variable is to the left
+                    if( ast.Left.Token.TokenType == TokenType.Word )
+                    {
+                        int incrIniValue = leftValue++;
+                        var symbol = ast.Left.Token.TokenValue;
+                        container.SetMemoryValue( symbol, leftValue );
+                        return incrIniValue;
+                    }
+
+                    //If (pre increment ) i.e variable is to the left
+                    if( ast.Right != null && ast.Right.Token.TokenType == TokenType.Word )
+                    {
+                        ++rightValue;
+                        var symbol = ast.Right.Token.TokenValue;
+                        container.SetMemoryValue( symbol, rightValue );
+                        return rightValue;
+                    }
+
+                    return null;
+                case TokenType.Decrement:
+                    //If (post decrement ) i.e variable is to the left
+                    if( ast.Left != null && ast.Left.Token.TokenType == TokenType.Word )
+                    {
+                        int decIniValue = leftValue--;
+                        var symbol = ast.Left.Token.TokenValue;
+                        container.SetMemoryValue( symbol, leftValue );
+                        return decIniValue;
+                    }
+
+                    //If (pre decrement ) i.e variable is to the left
+                    if( ast.Right != null && ast.Right.Token.TokenType == TokenType.Word )
+                    {
+                        --rightValue;
+                        var symbol = ast.Right.Token.TokenValue;
+                        container.SetMemoryValue( symbol, rightValue );
+                        return rightValue;
+                    }
+
+                    return null;
                 case TokenType.Plus:
                     return leftValue + rightValue;
                 case TokenType.Minus:
