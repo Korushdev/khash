@@ -103,10 +103,6 @@ bool = true/false;
 `-` Minus<br/>
 `/` Divide<br/>
 `*` Multiply<br/>
-`a++` Post Increment<br>
-`++aa` Pre Increment<br>
-`a--` Post Decrement<br>
-`--a` Pre Decrement<br>
 
 ### Comparison Operators
 `==` Equals<br/>
