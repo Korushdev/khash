@@ -1,24 +1,18 @@
-﻿using KHash.Domain.Environment;
-using KHash.Domain.Exceptions;
+﻿using KHash.CLI.Environment;
+using KHash.Core.Environment;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Compile = KHash.Domain.Compiler.Compiler;
-using Buffer = KHash.Domain.Compiler.OutputBuffer.OutputBuffer;
-using KHash.CLI.Environment;
+using Compile = KHash.Core.Compiler.Compiler;
+using Buffer = KHash.Core.Compiler.OutputBuffer.OutputBuffer;
 
 namespace KHash.CLI
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main( string[] args )
         {
             try
             {
-                IEnvironment consoleEnvironment = new ConsoleEnvironment();
+                IEnvironment consoleEnvironment = new ConsoleEnvironment( new IO() );
                 bool setupAllowContinue = consoleEnvironment.Setup( args );
 
                 if( setupAllowContinue )

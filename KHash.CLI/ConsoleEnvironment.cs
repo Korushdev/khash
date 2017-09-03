@@ -1,12 +1,10 @@
-﻿using KHash.Domain.Environment;
-using KHash.Domain.Exceptions;
+﻿using KHash.Core.Environment;
+using KHash.Core.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KHash.CLI.Environment
 {
@@ -19,8 +17,15 @@ namespace KHash.CLI.Environment
 
     public class ConsoleEnvironment : IEnvironment
     {
+        public IIO io;
+
         List<Command> commands = new List<Command>();
         Command callingCommand;
+
+        public ConsoleEnvironment( IIO io )
+        {
+            this.io = io;
+        }
 
         public bool Setup( string[] args )
         {
@@ -70,6 +75,11 @@ namespace KHash.CLI.Environment
             );
         }
 
+        public IIO GetIO()
+        {
+            return io;
+        }
+
         public new Types GetType()
         {
             return Types.CONSOLE;
@@ -83,11 +93,11 @@ namespace KHash.CLI.Environment
                 {
                     case CommandList.RUN_FILE:
                         string path = callingCommand.Params.FirstOrDefault();
-                        if( File.Exists( path ) == false )
+                        if( this.io.Exists( path ) == false )
                         {
                             throw new InvalidCommandExecutionException( "File cannot be found at this location: " + path, true );
                         }
-                        return File.ReadAllText( path );
+                        return this.io.ReadAllAsText( path );
 
                     case CommandList.RUN_STRING:
                         return callingCommand.Params.FirstOrDefault();
@@ -108,15 +118,14 @@ namespace KHash.CLI.Environment
 
         public string GetExecutablePath()
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string executableFileName = assembly.ManifestModule.Name;
-            string location = assembly.Location.Replace( executableFileName, "" );
+            var manifestModule = Assembly.GetEntryAssembly().ManifestModule;
+            string location = manifestModule.FullyQualifiedName.Replace( manifestModule.Name, "" );
             return Path.GetDirectoryName( location );
         }
 
         public string GetCurrentWorkingDirectory()
         {
-            return System.Environment.CurrentDirectory;
+            return Directory.GetCurrentDirectory();
         }
 
         private bool ParseArgs( string[] args )
