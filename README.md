@@ -87,6 +87,29 @@ int function add( int num )
 send add( a );
 ```
 
+### Ex7 - Class Declaration
+```
+class Foo
+{
+    private int a;
+    Init( int b = 2 )
+    {
+        a = b;
+    }
+
+    public int GetValue()
+    {
+        return a;
+    }
+}
+```
+
+### Ex8 - Class Instantiation
+```
+Foo foo = new Foo( 10 );
+send foo.GetValue();
+```
+
 ## Language reference
 
 ### Variable types
@@ -118,6 +141,18 @@ bool = true/false;
 
 ### Keywords
 `send` Prints to the output buffer
+
+### Types
+`int`
+`float`
+`double`
+`decimal`
+`string`
+`bool`
+
+### Access modifiers
+`private` private to the class
+`public` accessable from outside the object
 
 
 ## Tests
