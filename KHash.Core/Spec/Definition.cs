@@ -11,10 +11,28 @@ namespace KHash.Core.Spec
 {
     public class Definition
     {
+        public static partial class Types
+        {
+            public const string
+                Int = "int",
+                Float = "float",
+                Double = "Double",
+                Decimal = "Decimal",
+                Bool = "bool",
+                String = "string";
+        }
+    
         public static List<IMatcher> Keywords = new List<IMatcher>()
         {
             new MatchKeyword(TokenType.BeginCode, "<K#"),
             new MatchKeyword(TokenType.EndCode, "#>"),
+            new MatchKeyword(TokenType.New, "new"),
+            new MatchKeyword(TokenType.Class, "class"),
+            new MatchKeyword(TokenType.Construct, "Init"),
+            new MatchKeyword(TokenType.Destruct, "Destroy"),
+            new MatchKeyword(TokenType.Private, "private"),
+            new MatchKeyword(TokenType.Protected, "protected"),
+            new MatchKeyword(TokenType.Public, "public"),
             new MatchKeyword(TokenType.Send, "send"),
             new MatchKeyword(TokenType.If, "if"),
             new MatchKeyword(TokenType.Else, "else"),

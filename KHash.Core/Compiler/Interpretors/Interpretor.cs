@@ -1,4 +1,5 @@
-﻿using KHash.Core.Compiler.Lexer;
+﻿using Force.DeepCloner;
+using KHash.Core.Compiler.Lexer;
 using KHash.Core.Compiler.Parser.AST;
 using KHash.Core.Compiler.Scope;
 using KHash.Core.Environment;
@@ -10,9 +11,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KHash.Core.Compiler
+namespace KHash.Core.Compiler.Interpretors
 {
-    public class Interpretor
+    public partial class Interpretor
     {
         private OutputBuffer.OutputBuffer outputBuffer;
         private Container container;
@@ -64,15 +65,38 @@ namespace KHash.Core.Compiler
                     case AstTypes.While:
                         While( (While)ast );
                         break;
+                    case AstTypes.FunctionDeclr:
+                        FunctionDecleration( (FunctionDeclr)ast );
+                        break;
+                    case AstTypes.FunctionInvoke:
+                        var functionReturnVal = FunctionInvoke( (FunctionInvoke)ast );
+                        if( functionReturnVal != null )
+                        {
+                            return functionReturnVal;
+                        }
+                        break;
+                    case AstTypes.ClassDeclr:
+                        ClassDecleration( (ClassDeclr)ast );
+                        break;
+                    case AstTypes.ClassInvoke:
+                        var instance = ClassInvoke( (ClassInvoke)ast );
+                        if( instance != null )
+                        {
+                            return instance;
+                        }
+                        break;
+                    case AstTypes.ClassRef:
+                        var res = ClassReference( (ClassReference)ast );
+                        if( res != null )
+                        {
+                            return res;
+                        }
+                        break;
+                    case AstTypes.PropertyDeclr:
+                        PropertyDecleration( (PropertyDeclr)ast );
+                        break;
                     case AstTypes.MethodDeclr:
                         MethodDecleration( (MethodDeclr)ast );
-                        break;
-                    case AstTypes.MethodInvoke:
-                        var methodReturnVal = MethodInvoke( (MethodInvoke)ast );
-                        if( methodReturnVal != null )
-                        {
-                            return methodReturnVal;
-                        }
                         break;
                     case AstTypes.Return:
                         Return( (Return)ast );
@@ -94,67 +118,24 @@ namespace KHash.Core.Compiler
             ast.ScopedStatements.ForEach( statement => Execute( statement ) );
         }
 
-        public void MethodDecleration( MethodDeclr ast )
+        public void FunctionDecleration( FunctionDeclr ast )
         {
-            container.SetMemoryValue( ast.Name.TokenValue, ast );
+            container.Current().SetMemoryValue( ast.Name.TokenValue, ast );
         }
 
-        public dynamic MethodInvoke( MethodInvoke ast )
+        public dynamic FunctionInvoke( FunctionInvoke ast )
         {
-            var current = container.Current;
-            var methodName = ast.Name.TokenValue;
-            var value = container.GetMemoryValue( methodName );
-            if( value == null )
+            var functionName = ast.Name.TokenValue;
+            var value = container.Current().GetMemoryValue( functionName );
+            if( value != null && value is FunctionDeclr )
             {
-                value = container.GetGlobalMemoryValue( methodName );
-            }
-            if( value != null && value is MethodDeclr )
-            {
-                MethodDeclr declaredMethod = (MethodDeclr)value;
+                FunctionDeclr declaredFunction = (FunctionDeclr)value;
 
-                List<KeyValuePair<AST,object>> declaredArgValues = new List<KeyValuePair<AST, object>>();
-                List<object> invokedArgValues = new List<object>();
-                
-                for( int c = 0; c < ast.Arguments.Count(); c++ )
-                {
-                    AST invokeArg = ast.Arguments[c];
-                    var invokeArgVal = Execute( invokeArg );
-                    invokedArgValues.Add( invokeArgVal );
-                }
-
-                //Set scope start here
-                container.StartScope();
-
-
-                //Set default declared method args if they have been assigned a value
-                foreach( VarDeclr methodArg in declaredMethod.Arguments )
-                {
-                    if( methodArg.VariableValue != null )
-                    {
-                        var methodArgVal = Execute( methodArg.VariableValue );
-                        var symbol = methodArg.Token.TokenValue;
-                        container.SetMemoryValue( symbol, TokenHelper.CastByString( methodArg.DeclarationType.Token.TokenValue, methodArgVal ) );
-                    }
-                }
-
-                //Set arg values to scope
-                for( int c = 0; c < invokedArgValues.Count(); c++ )
-                {
-                    var methodArg = (VarDeclr)declaredMethod.Arguments.ElementAtOrDefault( c );
-                    if( methodArg != null )
-                    {
-                        var symbol = methodArg.Token.TokenValue;
-                        container.SetMemoryValue( symbol, TokenHelper.CastByString( methodArg.DeclarationType.Token.TokenValue, invokedArgValues[c] ) );
-                    }else
-                    {
-                        throw new MethodException( String.Format( "Method {0} expects {1} argument(s), you called {0} with {2} ", declaredMethod.Name.TokenValue, declaredMethod.Arguments.Count(), ast.Arguments.Count() ) );
-                    }
-                }
-
+                SetArgumentsToMemory( declaredFunction.Name, declaredFunction.Arguments, ast.Arguments );
 
                 try
                 {
-                    Execute( declaredMethod.Body );
+                    Execute( declaredFunction.Body );
                     container.EndScope();
                 }
                 catch( ReturnValueException returnValueException )
@@ -165,6 +146,62 @@ namespace KHash.Core.Compiler
                 }
             }
             return null;
+        }
+
+        private void SetArgumentsToMemory( Token functionName, List<AST> declaredArgument, List<AST> invokingArguments, Action startFunctionScope = null )
+        {
+            List<KeyValuePair<AST, object>> declaredArgValues = new List<KeyValuePair<AST, object>>();
+            List<object> invokedArgValues = new List<object>();
+
+            for( int c = 0; c < invokingArguments.Count(); c++ )
+            {
+                AST invokeArg = invokingArguments[c];
+                var invokeArgVal = Execute( invokeArg );
+                invokedArgValues.Add( invokeArgVal );
+            }
+
+            //Set scope start here
+            if( startFunctionScope == null )
+            {
+                Scope.Scope current = container.Current();
+                Scope.Scope newScope = container.StartScope();
+
+                if( current.Parent != null && current.Parent is ClassScope )
+                {
+                    ClassScope classScope = (ClassScope)current.Parent;
+                    newScope.Parent = classScope.DeepClone();
+                }
+            }
+            else
+            {
+                startFunctionScope();
+            }
+
+            //Set default declared function args if they have been assigned a value
+            foreach( VarDeclr functionArg in declaredArgument )
+            {
+                if( functionArg.VariableValue != null )
+                {
+                    var functionArgVal = Execute( functionArg.VariableValue );
+                    var symbol = functionArg.Token.TokenValue;
+                    container.Current().SetMemoryValue( symbol, TypeHelper.CastByString( functionArg.DeclarationType.Token.TokenValue, functionArgVal ) );
+                }
+            }
+
+            //Set arg values to scope
+            for( int c = 0; c < invokedArgValues.Count(); c++ )
+            {
+                var functionArg = (VarDeclr)declaredArgument.ElementAtOrDefault( c );
+                if( functionArg != null )
+                {
+                    var symbol = functionArg.Token.TokenValue;
+                    container.Current().SetMemoryValue( symbol, TypeHelper.CastByString( functionArg.DeclarationType.Token.TokenValue, invokedArgValues[c] ) );
+                }
+                else
+                {
+                    throw new MethodException( String.Format( "Function {0} expects {1} argument(s), you called {0} with {2} ", functionName.TokenValue, declaredArgument.Count(), invokingArguments.Count() ) );
+                }
+            }
         }
 
         public dynamic Return( Return ast )
@@ -194,7 +231,7 @@ namespace KHash.Core.Compiler
             int maxIteration = Convert.ToInt32( optionFactory.GetOption( OptionKey.KHASH_MAX_ITERATIONS ) );
             Execute( condition.InitStatement );
 
-            for( container.GetMemoryValue( condition.InitStatement ); Convert.ToBoolean( Execute( condition.Condition ) ); Execute( condition.IteratedExpression ) )
+            for( container.Current().GetMemoryValue( condition.InitStatement ); Convert.ToBoolean( Execute( condition.Condition ) ); Execute( condition.IteratedExpression ) )
             {
                 Execute( condition.Body );
                 iteration++;
@@ -261,7 +298,7 @@ namespace KHash.Core.Compiler
 
             var symbol = ast.VariableName.Token.TokenValue;
 
-            container.SetMemoryValue( symbol, TokenHelper.CastByString( ast.DeclarationType.Token.TokenValue, value ) );
+            container.Current().SetMemoryValue( symbol, TypeHelper.CastByString( ast.DeclarationType.Token.TokenValue, value ) );
         }
 
         private void Send( SendAST ast )
@@ -307,10 +344,8 @@ namespace KHash.Core.Compiler
                     return false;
             }
 
-
-            var current = container.Current;
-
-            var value = container.GetMemoryValue( item );
+            var current = container.Current();
+            var value = current.GetMemoryValue( item );
             if( value != null )
             {
                 return value;
@@ -330,8 +365,8 @@ namespace KHash.Core.Compiler
             switch( ast.Token.TokenType )
             {
                 case TokenType.Equals:
-
-                    container.SetMemoryValue( ast.Left, rightValue );
+                    var current = container.Current();
+                    current.ResetMemoryValue( ast.Left, rightValue );
 
                     break;
                 case TokenType.Match:
@@ -346,7 +381,7 @@ namespace KHash.Core.Compiler
                     {
                         int incrIniValue = leftValue++;
                         var symbol = ast.Left.Token.TokenValue;
-                        container.SetMemoryValue( symbol, leftValue );
+                        container.Current().SetMemoryValue( symbol, leftValue );
                         return incrIniValue;
                     }
 
@@ -355,7 +390,7 @@ namespace KHash.Core.Compiler
                     {
                         ++rightValue;
                         var symbol = ast.Right.Token.TokenValue;
-                        container.SetMemoryValue( symbol, rightValue );
+                        container.Current().SetMemoryValue( symbol, rightValue );
                         return rightValue;
                     }
 
@@ -366,7 +401,7 @@ namespace KHash.Core.Compiler
                     {
                         int decIniValue = leftValue--;
                         var symbol = ast.Left.Token.TokenValue;
-                        container.SetMemoryValue( symbol, leftValue );
+                        container.Current().SetMemoryValue( symbol, leftValue );
                         return decIniValue;
                     }
 
@@ -375,7 +410,7 @@ namespace KHash.Core.Compiler
                     {
                         --rightValue;
                         var symbol = ast.Right.Token.TokenValue;
-                        container.SetMemoryValue( symbol, rightValue );
+                        container.Current().SetMemoryValue( symbol, rightValue );
                         return rightValue;
                     }
 

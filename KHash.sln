@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KHash.Core", "KHash.Core\KHash.Core.csproj", "{6BF0CB2E-3448-4FF0-9387-2254CA9E6001}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KHash.Core", "KHash.Core\KHash.Core.csproj", "{6BF0CB2E-3448-4FF0-9387-2254CA9E6001}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KHash.CLI", "KHash.CLI\KHash.CLI.csproj", "{D66E749C-9886-44BC-A7B4-7EB5B1EFD19F}"
 EndProject

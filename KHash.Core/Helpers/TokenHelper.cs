@@ -48,26 +48,5 @@ namespace KHash.Core.Helpers
         {
             return HasNoRightExpression( type );
         }
-
-        public static object CastByString( string type, object value )
-        {
-            switch( type )
-            {
-                case "int":
-                    return Convert.ToInt32( value );
-                case "float":
-                    return (float)Convert.ToDouble( value );
-                case "double":
-                    return Convert.ToDouble( value );
-                case "decimal":
-                    return Convert.ToDecimal( value );
-                case "bool":
-                    return Convert.ToBoolean( value );
-                case "string":
-                    return Convert.ToString( value );
-                default:
-                    return value;
-            }
-        }
     }
 }

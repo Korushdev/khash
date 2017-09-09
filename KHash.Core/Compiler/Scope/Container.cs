@@ -1,4 +1,6 @@
-﻿using KHash.Core.Compiler.Parser.AST;
+﻿using KHash.Core.Compiler.Lexer;
+using KHash.Core.Compiler.Parser.AST;
+using KHash.Core.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,79 +9,151 @@ using System.Threading.Tasks;
 
 namespace KHash.Core.Compiler.Scope
 {
-    public class Container : BaseScope
+    public class Container
     {
-        public InnerScope Global;
-        public InnerScope Current;
+        public Stack<Scope> Scopes = new Stack<Scope>();
 
-        public Container()
+        private Scope global = new Scope();
+
+        public Scope StartScope()
         {
-            Global = new InnerScope();
-            Current = Global;
+            Scope newScope = new Scope();
+            Scopes.Push( newScope );
+            return newScope;
         }
 
-        public void StartScope()
+        public Scope EndScope()
         {
-            InnerScope scope = new InnerScope();
-            Current = scope;
-            Scopes.Add( scope );
+            return Scopes.Pop();
         }
 
-        public void EndScope()
+        public Scope Current()
         {
-            int currentIndex = Scopes.IndexOf( Current );
-
-            Current = null;
-            Scopes.RemoveAt( currentIndex );
-
-            //Reset Current scope to the previous scope in the Scopes List
-            if( currentIndex != 0 )
-            {
-                int resetIndex = currentIndex - 1;
-                Current = Scopes[resetIndex];
-            }
+            return Scopes.Count() > 0 ? Scopes.FirstOrDefault() : global;
         }
 
-        public object GetMemoryValue( string key )
+        public Scope Global()
         {
-            return GetValueFromMemory( GetCurrentMemory(), key );
+            return global;
         }
+    }
 
-        public object GetGlobalMemoryValue( string key )
-        {
-            return GetValueFromMemory( Global.Memory, key );
-        }
+    public class Scope
+    {
+        public Scope Parent;
+        public Dictionary<string, MemoryValue> Memory = new Dictionary<string, MemoryValue>();
 
         public object GetMemoryValue( AST ast )
         {
             return GetMemoryValue( ast.Token.TokenValue );
         }
 
-        private object GetValueFromMemory( Memory memory, string key )
+        private object GetValueFromMemory( string key )
         {
-            if( memory.Values.ContainsKey( key ) )
+            if( Memory.ContainsKey( key ) )
             {
-                return memory.Values[key];
+                return Memory[key].Value;
+            }else if( Parent is ClassScope )
+            {
+                if( Parent.Memory.ContainsKey( key ) )
+                {
+                    return Parent.Memory[key].Value;
+                }
             }
+
             return null;
         }
-
-        public void SetMemoryValue( string key, object value )
+        
+        public object GetMemoryValue( string key )
         {
-            Memory current = GetCurrentMemory();
-
-            current.Values[key] = value;
+            return GetValueFromMemory( key );
         }
-
+        
         public void SetMemoryValue( AST key, object value )
         {
             SetMemoryValue( key.Token.TokenValue, value );
         }
 
-        public Memory GetCurrentMemory()
+        public void SetMemoryValue( string key, object value, bool setToParent = false )
         {
-            return Current.Memory;
+            if( setToParent && Parent != null )
+            {
+                Parent.Memory[key] = CreateValue( value );
+            }else
+            {
+                Memory[key] = CreateValue( value );
+            }            
         }
 
+        public void ResetMemoryValue( AST key, object value )
+        {
+            ResetMemoryValue( key.Token.TokenValue, value );
+        }
+
+        public void ResetMemoryValue( string key, object value )
+        {
+            if( Memory.ContainsKey( key ) )
+            {
+                Memory[key] = CreateValue( value );
+            }else
+            {
+                if( Memory.ContainsKey( key ) )
+                {
+                    Memory[key] = CreateValue( value );
+                }
+                else if( Parent is ClassScope )
+                {
+                    if( Parent.Memory.ContainsKey( key ) )
+                    {
+                        Parent.Memory[key] = CreateValue( value );
+                    }
+                }
+            }
+
+        }
+
+        private MemoryValue CreateValue( object value )
+        {
+            if( value is MemoryValue )
+            {
+                return _CreateValue( (MemoryValue)value );
+            }
+            MemoryValue mem = new MemoryValue()
+            {
+                Type = value.GetType(),
+                Value = value
+            };
+            return mem;
+        }
+
+        private MemoryValue _CreateValue( MemoryValue mem )
+        {
+            return mem;
+        }
+    }
+
+    public class MemoryValue
+    {
+        public object Value { get; set; }
+        public Type Type { get; set; }
+
+        private TokenType accessModifier = TokenType.Public;
+        public TokenType AccessModifier
+        {
+            get
+            {
+                return accessModifier;
+            }
+            set
+            {
+                if( value == TokenType.Private || value == TokenType.Protected || value == TokenType.Public )
+                {
+                    accessModifier = value;
+                }else
+                {
+                    throw new VariableException( String.Format( "Invalid access modifier, cannot set {0}, possible types are private, protected, public", value ) );
+                }
+            }
+        }
     }
 }

@@ -7,19 +7,13 @@ using System.Threading.Tasks;
 
 namespace KHash.Core.Compiler.Parser.AST
 {
-    public class MethodDeclr : AST
+    public class MethodDeclr : FunctionDeclr
     {
-        public Token Name { get; set; }
-        public Token ReturnType { get; set; }
-        public List<AST> Arguments { get; private set; }
-        public AST Body { get; set; }
+        public Token AccessModifier;
 
-        public MethodDeclr( Token name, Token returnType, List<AST> args, AST body ) : base( new Token( TokenType.Function ) )
+        public MethodDeclr( Token accessModifier, Token name, Token returnType, List<AST> args, AST body ) : base( name, returnType, args, body )
         {
-            Name = name;
-            ReturnType = returnType;
-            Arguments = args;
-            Body = body;
+            AccessModifier = accessModifier;
         }
 
         public override AstTypes AstType

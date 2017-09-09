@@ -8,7 +8,6 @@ namespace KHash.Core.Compiler.Lexer
 {
     public enum TokenType
     {
-        Var,
         BeginCode,
         EndCode,
         If,
@@ -59,6 +58,13 @@ namespace KHash.Core.Compiler.Lexer
         Comma,
         Return,
         While,
-        For
+        For,
+        New,
+        Class,
+        Construct,
+        Destruct,
+        Private,
+        Protected,
+        Public
     }
 }

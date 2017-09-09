@@ -24,7 +24,7 @@ namespace KHash.Core.Compiler.Parser
         }
     }
 
-    public class KHashParser
+    public partial class KHashParser
     {
         ParserTokenizer tokenStream;
 
@@ -48,8 +48,8 @@ namespace KHash.Core.Compiler.Parser
         private AST.AST Statement()
         {
             //Check for classes or methods
-            var ast = tokenStream.Capture( MethodDecleration );
-            
+            var ast = tokenStream.Capture( ClassDecleration )
+                                 .Or( () => tokenStream.Capture( FunctionDecleration ) );
             if( ast != null )
             {
                 return ast;
@@ -95,18 +95,18 @@ namespace KHash.Core.Compiler.Parser
 
             throw new ParserInvalidSyntaxException( String.Format( "Unknown expression type {0} - {1}", tokenStream.Current.TokenType, tokenStream.Current.TokenValue ) );
         }
-
-        private AST.AST MethodDecleration()
+        
+        private AST.AST FunctionDecleration()
         {
             if( IsValidMethodReturnType() == false )
             {
                 throw new Exception();
             }
 
-            return ParseMethodDecleration();
+            return ParseFunctionDecleration();
         }
 
-        private AST.AST ParseMethodDecleration()
+        private AST.AST ParseFunctionDecleration()
         {
             var type = tokenStream.Take( tokenStream.Current.TokenType );
             tokenStream.Take( TokenType.Function );
@@ -116,7 +116,7 @@ namespace KHash.Core.Compiler.Parser
 
             var body = GetStatementsInScope( TokenType.LBracket, TokenType.RBracket );
 
-            return new MethodDeclr( functionName, type, arguments, body );
+            return new FunctionDeclr( functionName, type, arguments, body );
         }
 
         private List<AST.AST> GetArgumentList( bool isDecleration = true )
@@ -126,7 +126,8 @@ namespace KHash.Core.Compiler.Parser
             List<AST.AST> args = new List<AST.AST>();
             while( tokenStream.Current.TokenType != TokenType.CloseParenth )
             {
-                var argument = isDecleration ? VariableDeclarationAndAssignment() : InnerStatement();
+
+                var argument = isDecleration ? VariableDeclarationAndAssignment(true) : InnerStatement();
 
                 if( tokenStream.Current.TokenType == TokenType.Comma )
                 {
@@ -137,67 +138,6 @@ namespace KHash.Core.Compiler.Parser
 
             tokenStream.Take( TokenType.CloseParenth );
             return args;
-        }
-
-        private AST.AST For()
-        {
-            if( tokenStream.Current.TokenType == TokenType.For )
-            {
-                return tokenStream.Capture( ParseFor );
-            }
-            return null;
-        }
-
-        private AST.AST ParseFor()
-        {
-            tokenStream.Take( TokenType.For );
-            tokenStream.Take( TokenType.OpenParenth );
-
-
-            AST.AST initStatement = VariableDeclarationAndAssignment();
-            tokenStream.Take( TokenType.SemiColon );
-            AST.AST condition = Expression();
-            tokenStream.Take( TokenType.SemiColon );
-            AST.AST iterateExpr = Expression();
-
-            tokenStream.Take( TokenType.CloseParenth );
-
-            var body = GetStatementsInScope( TokenType.LBracket, TokenType.RBracket );
-            return new For( initStatement, condition, iterateExpr, body );
-        }
-
-        private AST.AST While()
-        {
-            if(tokenStream.Current.TokenType == TokenType.While)
-            {
-                return tokenStream.Capture( ParseWhile );
-            }
-
-            return null;
-        }
-
-        private AST.AST ParseWhile()
-        {
-            var expressionAndStatements = GetExpressionAndStatements( TokenType.While );
-
-            return new While( new Token( TokenType.While ), expressionAndStatements.Item1, expressionAndStatements.Item2 );
-        }
-
-        private AST.AST ConditionalIf()
-        {
-            if( tokenStream.Current.TokenType == TokenType.If )
-            {
-                return tokenStream.Capture( ParseConditionalIf );
-            }
-            return null;
-        }
-
-        private AST.AST ParseConditionalIf()
-        {
-            var expressionAndStatements = GetExpressionAndStatements( TokenType.If );
-
-            return new Conditional( new Token( TokenType.If ), expressionAndStatements.Item1, expressionAndStatements.Item2 );
-            
         }
 
         private Tuple<AST.AST, ScopeDeclr> GetExpressionAndStatements( TokenType typeOfLogical )
@@ -213,67 +153,7 @@ namespace KHash.Core.Compiler.Parser
 
             return new Tuple<AST.AST, ScopeDeclr>( expression, body );
         }
-
-        private AST.AST Switch()
-        {
-            if( tokenStream.Current.TokenType == TokenType.Switch )
-            {
-                return tokenStream.Capture( ParseSwitch );
-            }
-            return null;
-        }
-
-        private AST.AST ParseSwitch()
-        {
-            tokenStream.Take( TokenType.Switch );
-            tokenStream.Take( TokenType.OpenParenth );
-
-            var expression = Expression();
-
-            tokenStream.Take( TokenType.CloseParenth );
-
-            tokenStream.Take( TokenType.LBracket );
-            var cases = new List<Case>();
-            while( tokenStream.Current.TokenType != TokenType.RBracket )
-            {
-                Case caseAST = ParseCase();
-                if( caseAST != null )
-                {
-                    cases.Add( caseAST );
-                }
-            }
-
-            tokenStream.Take( TokenType.RBracket );
-
-            return new Switch( expression, cases );
-        }
-
-        private Case ParseCase()
-        {
-            bool isCaseOf = false;
-            if( tokenStream.Current.TokenType == TokenType.CaseOf )
-            {
-                isCaseOf = true;
-                tokenStream.Take( TokenType.CaseOf );
-            }
-            else
-            {
-                tokenStream.Take( TokenType.Case );
-            }
-            var caseExpression = Expression();
-
-            if( caseExpression == null )
-            {
-                throw new ParserInvalidSyntaxException( String.Format( "Unknown expression type {0} - {1}", tokenStream.Current.TokenType, tokenStream.Current.TokenValue ) );
-            }
-
-            var body = GetStatementsInScope( TokenType.Colon, TokenType.Break );
-            Case caseAST = new Case( caseExpression, body, isCaseOf );
-
-            tokenStream.Take( TokenType.SemiColon );
-            return caseAST;
-        }
-
+        
         private AST.AST Return()
         {
             if( tokenStream.Current.TokenType == TokenType.Return && tokenStream.Alt( ParseReturn ) )
@@ -310,11 +190,9 @@ namespace KHash.Core.Compiler.Parser
             return null;
         }
         
-        private AST.AST VariableDeclarationAndAssignment()
+        private AST.AST VariableDeclarationAndAssignment( bool throwErr = false )
         {
-            var isVar = tokenStream.Current.TokenType == TokenType.Var;
-
-            if( ( isVar || IsValidMethodReturnType() ) && IsValidVariableName( tokenStream.Peek( 1 ) ) )
+            if( ( IsValidMethodReturnType() ) && IsValidVariableName( tokenStream.Peek( 1 ) ) )
             {
                 var type = tokenStream.Take( tokenStream.Current.TokenType );
 
@@ -329,6 +207,11 @@ namespace KHash.Core.Compiler.Parser
                 }
 
                 return new VarDeclr( type, name, expr );
+            }
+
+            if( throwErr )
+            {
+                throw new Exception();
             }
 
             return null;
@@ -372,7 +255,6 @@ namespace KHash.Core.Compiler.Parser
                 var statement = getter();
 
                 lines.Add( statement );
-
                 if( expectSemicolon && StatementExpectsSemiColon( statement ) )
                 {
                     tokenStream.Take( TokenType.SemiColon );
@@ -386,106 +268,19 @@ namespace KHash.Core.Compiler.Parser
 
         private bool StatementExpectsSemiColon( AST.AST statement )
         {
+            switch( statement.AstType )
+            {
+                case AstTypes.ClassDeclr:
+                case AstTypes.MethodDeclr:
+                case AstTypes.FunctionDeclr:
+                case AstTypes.MagicMethodDeclr:
+                case AstTypes.While:
+                case AstTypes.For:
+                case AstTypes.Conditional:
+                case AstTypes.Switch:
+                    return false;
+            }
             return true;
-        }
-
-        private AST.AST Expression()
-        {
-            if( IsValidOperand() )
-            {
-                return ParseExpression();
-            }
-
-            switch( tokenStream.Current.TokenType )
-            {
-                case TokenType.Increment:
-                case TokenType.Decrement:
-                    Func<Func<AST.AST>, Func<AST.AST>, AST.AST> incDecOP = ( leftFunc, rightFunc ) =>
-                    {
-                        var opType = Operator();
-
-                        AST.AST right = null;
-                        right = rightFunc();
-
-                        if( right == null )
-                        {
-                            return null;
-                        }
-
-                        return new Expr( null, opType, right );
-                    };
-
-                    Func<AST.AST> leftOp = () => incDecOP( ExpressionTerminal, Expression );
-
-                    return tokenStream.Capture( leftOp )
-                                      .Or( () => tokenStream.Capture( ExpressionTerminal ) );
-                case TokenType.OpenParenth:
-
-                    Func<AST.AST> basicOp = () =>
-                    {
-                        tokenStream.Take( TokenType.OpenParenth );
-
-                        var expr = Expression();
-
-                        tokenStream.Take( TokenType.CloseParenth );
-
-                        return expr;
-                    };
-
-                    Func<AST.AST> doubleOp = () =>
-                    {
-                        var op1 = basicOp();
-
-                        var op = Operator();
-
-                        var expr = Expression();
-
-                        return new Expr( op1, op, expr );
-                    };
-
-                    return tokenStream.Capture( doubleOp )
-                                      .Or( () => tokenStream.Capture( basicOp ) );
-
-                default:
-                    return null;
-            }
-        }
-
-        private AST.AST ParseExpression()
-        {
-            Func<Func<AST.AST>, Func<AST.AST>, AST.AST> op = ( leftFunc, rightFunc ) =>
-            {
-                var left = leftFunc();
-
-                if( left == null )
-                {
-                    return null;
-                }
-
-                var opType = Operator();
-                AST.AST right = null;
-                if( TokenHelper.HasNoRightExpression( opType.TokenType ) == false )
-                {
-                    right = rightFunc();
-
-                    if( right == null )
-                    {
-                        return null;
-                    }
-                }
-
-                return new Expr( left, opType, right );
-            };
-
-            Func<AST.AST> leftOp = () => op( ExpressionTerminal, Expression );
-
-            return tokenStream.Capture( leftOp )
-                              .Or( () => tokenStream.Capture( ExpressionTerminal ) );
-        }
-
-        private AST.AST ExpressionTerminal()
-        {
-            return FunctionCallStatement().Or(SingleToken);
         }
 
         private AST.AST FunctionCallStatement()
@@ -497,48 +292,9 @@ namespace KHash.Core.Compiler.Parser
         {
             var nameOfFunction = tokenStream.Take( TokenType.Word );
 
-            var arguments = GetArgumentList(false);
+            var arguments = GetArgumentList( false );
 
-            return new MethodInvoke( nameOfFunction, arguments );
-        }
-
-        private AST.AST SingleToken()
-        {
-            if( IsValidOperand() )
-            {
-                var token = new Expr( tokenStream.Take( tokenStream.Current.TokenType ) );
-
-                return token;
-            }
-
-            return null;
-        }
-
-
-        private Token Operator()
-        {
-            if( TokenHelper.IsOperator( tokenStream.Current ) )
-            {
-                return tokenStream.Take( tokenStream.Current.TokenType );
-            }
-
-            throw new ParserInvalidSyntaxException( String.Format( "Invalid token found. Expected operator but found {0} - {1}", tokenStream.Current.TokenType, tokenStream.Current.TokenValue ) );
-        }
-        
-        private bool IsValidOperand()
-        {
-            switch( tokenStream.Current.TokenType )
-            {
-                case TokenType.Int:
-                case TokenType.QuotedString:
-                case TokenType.Word:
-                case TokenType.True:
-                case TokenType.Float:
-                case TokenType.Nil:
-                case TokenType.False:
-                    return true;
-            }
-            return false;
+            return new FunctionInvoke( nameOfFunction, arguments );
         }
 
         private bool IsValidMethodReturnType()
@@ -549,7 +305,6 @@ namespace KHash.Core.Compiler.Parser
                 case TokenType.Word:
                 case TokenType.Int:
                 case TokenType.String:
-                case TokenType.Var:
                 case TokenType.Boolean:
                     return true;
             }

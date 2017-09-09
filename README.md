@@ -132,7 +132,7 @@ Contributors are welcome to join the project, add code, suggest changes and help
 
 1. Write unit Tests
 2. Comment source code
-3. Support classes/namespaces
+3. Support namespaces
 4. Add Inbuilt classes
 
 ## License

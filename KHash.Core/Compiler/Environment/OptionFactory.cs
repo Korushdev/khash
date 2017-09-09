@@ -2,6 +2,7 @@
 using KHash.Core.Helpers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 //using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,7 +20,7 @@ namespace KHash.Core.Environment
             this.environment = env;
             SetDefaults();
 
-            ParseClientSettings();
+            //ParseClientSettings();
         }
 
         private void SetDefaults()
@@ -47,20 +48,9 @@ namespace KHash.Core.Environment
                 throw new InvalidOptionException( "Cannot parse ini, file could not be found in:" + path );
             }
 
-            //int counter = 0;
-            //string line;
+            OptionParser parser = new OptionParser( this );
 
-            //OptionParser parser = new OptionParser( this );
-
-            //// Read the file and iterate it line by line.
-            //System.IO.StreamReader file = new System.IO.StreamReader( path );
-            //while( ( line = file.ReadLine() ) != null )
-            //{
-            //    parser.ParseLine( line, counter );
-            //    counter++;
-            //}
-
-            //file.Close();
+            this.environment.GetIO().StreamReadByLine( path, parser.ParseLine );
         }
 
         public void SetOption( OptionKey key, string value )

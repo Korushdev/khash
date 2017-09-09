@@ -9,13 +9,13 @@ namespace KHash.Core.Compiler.Parser.AST
 {
     public class VarDeclr : AST
     {
-        public AST DeclarationType { get; private set; }
+        public AST DeclarationType { get; protected set; }
 
-        public AST VariableValue { get; private set; }
+        public AST VariableValue { get; protected set; }
 
-        public AST VariableName { get; private set; }
+        public AST VariableName { get; protected set; }
 
-        protected VarDeclr( Token token ) : base( token )
+        protected VarDeclr( Token name ) : base( name )
         {
         }
 

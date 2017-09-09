@@ -7,20 +7,24 @@ using System.Threading.Tasks;
 
 namespace KHash.Core.Compiler.Parser.AST
 {
-    public class MethodInvoke : AST
+    public class FunctionDeclr : AST
     {
         public Token Name { get; set; }
+        public Token ReturnType { get; set; }
         public List<AST> Arguments { get; private set; }
+        public AST Body { get; set; }
 
-        public MethodInvoke( Token name, List<AST> args) : base( new Token( TokenType.Function ) )
+        public FunctionDeclr( Token name, Token returnType, List<AST> args, AST body ) : base( new Token( TokenType.Function ) )
         {
             Name = name;
+            ReturnType = returnType;
             Arguments = args;
+            Body = body;
         }
 
         public override AstTypes AstType
         {
-            get { return AstTypes.MethodInvoke; }
+            get { return AstTypes.FunctionDeclr; }
         }
     }
 }

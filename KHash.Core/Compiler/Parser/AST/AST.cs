@@ -10,8 +10,8 @@ namespace KHash.Core.Compiler.Parser.AST
     public enum AstTypes
     {
         Expression,
-        MethodDeclr,
-        MethodInvoke,
+        FunctionDeclr,
+        FunctionInvoke,
         ScopeDeclr,
         Send,
         VarDeclr,
@@ -19,7 +19,13 @@ namespace KHash.Core.Compiler.Parser.AST
         Switch,
         Return,
         While,
-        For
+        For,
+        ClassDeclr,
+        PropertyDeclr,
+        MethodDeclr,
+        MagicMethodDeclr,
+        ClassInvoke,
+        ClassRef
     }
 
     public abstract class AST
@@ -27,7 +33,7 @@ namespace KHash.Core.Compiler.Parser.AST
         public Token Token { get; set; }
 
         public List<AST> Children { get; private set; }
-
+        
         public AST( Token token )
         {
             Token = token;
