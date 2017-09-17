@@ -11,6 +11,7 @@ namespace KHash.Core.Compiler.Scope
 {
     public class Container
     {
+        private Scope current;
         public Stack<Scope> Scopes = new Stack<Scope>();
 
         private Scope global = new Scope();
@@ -18,23 +19,49 @@ namespace KHash.Core.Compiler.Scope
         public Scope StartScope()
         {
             Scope newScope = new Scope();
+            current = newScope;
             Scopes.Push( newScope );
+
             return newScope;
+        }
+
+        public Scope StartScope( Scope scope )
+        {
+            current = scope;
+            Scopes.Push( scope );
+
+            return scope;
         }
 
         public Scope EndScope()
         {
-            return Scopes.Pop();
+            var removedscope = Scopes.Pop();
+            current = Scopes.FirstOrDefault();
+            return removedscope;
         }
 
         public Scope Current()
         {
-            return Scopes.Count() > 0 ? Scopes.FirstOrDefault() : global;
+            if( current == null )
+            {
+                current = global;
+            }
+            return current;
+        }
+
+        public void SetCurrent( Scope newCurrent )
+        {
+            current = newCurrent;
         }
 
         public Scope Global()
         {
-            return global;
+            return Current();
+        }
+
+        public void Assign( AST ast, object value, Scope scope )
+        {
+            scope.Memory[ast.Token.TokenValue] = scope.CreateValue( value );
         }
     }
 
@@ -112,7 +139,7 @@ namespace KHash.Core.Compiler.Scope
 
         }
 
-        private MemoryValue CreateValue( object value )
+        public MemoryValue CreateValue( object value )
         {
             if( value is MemoryValue )
             {

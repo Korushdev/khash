@@ -33,6 +33,7 @@ namespace KHash.Core.Spec
             new MatchKeyword(TokenType.Private, "private"),
             new MatchKeyword(TokenType.Protected, "protected"),
             new MatchKeyword(TokenType.Public, "public"),
+            new MatchKeyword(TokenType.Static, "static"),
             new MatchKeyword(TokenType.Send, "send"),
             new MatchKeyword(TokenType.If, "if"),
             new MatchKeyword(TokenType.Else, "else"),

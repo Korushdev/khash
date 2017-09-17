@@ -4,6 +4,7 @@ using KHash.Core.Compiler.Parser.AST;
 using KHash.Core.Compiler.Scope;
 using KHash.Core.Exceptions;
 using KHash.Core.Helpers;
+using KHash.Core.Libraries;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,7 +20,20 @@ namespace KHash.Core.Compiler.Interpretors
                 Type = ast.Name.TokenValue,
                 ClassAST = ast
             };
-            container.Current().SetMemoryValue( classScope.Type, classScope );
+            
+
+            if( ast.IsStatic )
+            {
+                classScope.IsInstantiated = true;
+                SettingClassScope( classScope );
+                var s = container.EndScope();
+
+                container.Current().SetMemoryValue( classScope.Type, s.Parent);
+            }
+            else
+            {
+                container.Current().SetMemoryValue( classScope.Type, classScope );
+            }
         }
 
         private dynamic ClassInvoke( ClassInvoke ast )
@@ -27,6 +41,11 @@ namespace KHash.Core.Compiler.Interpretors
             ClassScope classScope = GetClassFromMemory( ast.Name );
             if( classScope != null && classScope.ClassAST != null )
             {
+                if( classScope.ClassAST.IsStatic )
+                {
+                    throw new ClassException( String.Format( "Class {0} is static and cannot be instatiated", classScope.ClassAST.Name.TokenValue ) );
+                }
+                classScope.IsInstantiated = true;
                 if( classScope.ClassAST.MagicMethods.Constructor != null )
                 {
                     ConstructorInvoke( ast, classScope );
@@ -41,8 +60,32 @@ namespace KHash.Core.Compiler.Interpretors
             return null;
         }
 
+        private ClassScope GetFromLibraries( Token name )
+        {
+            var tuple = this.Libraries.GetClass( name );
+
+            if( tuple != null )
+            {
+                ClassLibraryScope classScope = new ClassLibraryScope()
+                {
+                    IsInstantiated = true,
+                    Type = tuple.Item2.GetName(),
+                    ClassDef = tuple.Item2,
+                    Library = tuple.Item1
+                };
+                return classScope;
+            }
+
+            return null;
+        }
+
         private ClassScope GetClassFromMemory( Token name )
         {
+            ClassScope libraryClass = GetFromLibraries( name );
+            if( libraryClass != null )
+            {
+                return libraryClass;
+            }
             var className = name.TokenValue;
             var value = container.Current().GetMemoryValue( className );
             if( value == null )
@@ -113,11 +156,23 @@ namespace KHash.Core.Compiler.Interpretors
             Execute( ast.Body );
         }
 
-        private dynamic ClassReference( ClassReference ast )
+        private dynamic ClassReference( ClassReference ast, bool returnScope = false )
         {
             ClassScope classScope = GetClassFromMemory( ast.Token );
-            if( classScope != null && classScope.ClassAST != null )
+            if( classScope == null )
             {
+                return null;
+            }
+            else if( classScope is ClassLibraryScope )
+            {
+                return ClassLibraryReference( (ClassLibraryScope)classScope, ast, returnScope );
+            }
+            else if( classScope.ClassAST != null )
+            {
+                if( classScope.IsInstantiated == false )
+                {
+                    throw new ClassException( String.Format( "Class {0} is not instatiated, use the new keyword to create an object instance", classScope.ClassAST.Name.TokenValue ) );
+                }
                 object currentValueToReturn = null;
                 foreach( var reference in ast.Deferences )
                 {
@@ -127,32 +182,71 @@ namespace KHash.Core.Compiler.Interpretors
                     }
 
                     //check if ref is public
-                    string keyName = reference.Token.TokenValue;
-                    bool isProperty = true;
-                    if( reference is FunctionInvoke )
+                    ValidateReference( reference, classScope );
+                    
+                    Scope.Scope newScope = new Scope.Scope();
+                    newScope.Parent = classScope;
+                    container.StartScope( newScope );
+
+                    var result = Execute( reference );
+                    var resultingScope = container.Scopes.Peek().Parent;
+                    if( returnScope )
                     {
-                        var o = (FunctionInvoke)reference;
-                        keyName = o.Name.TokenValue;
-                        isProperty = false;
+                        return resultingScope;
                     }
-
-                    if( classScope.Memory.ContainsKey( keyName ) && 
-                        classScope.Memory[ keyName ].AccessModifier != TokenType.Public )
+                    if( resultingScope is ClassScope )
                     {
-                        string typeMessage = isProperty ? "property" : "method";
-                        throw new InterpretorException( String.Format("Cannot access {0}, {1} must be defined as public, {2} set in class {3}", keyName, typeMessage, classScope.Memory[keyName].AccessModifier.ToString().ToLower(), classScope.ClassAST.Name.TokenValue ) );
+                        classScope = (ClassScope)resultingScope;
+                        string className = ast.Token.TokenValue;
+                        if( container.Current().GetMemoryValue( className ) != null )
+                        {
+                            container.Current().SetMemoryValue( className,classScope );
+                        }else if( container.Global().GetMemoryValue( className ) != null  )
+                        {
+                            container.Global().SetMemoryValue( className, classScope );
+                        }
                     }
-
-                    var current = container.StartScope();
-                    current.Parent = classScope.DeepClone();
-
-                    currentValueToReturn = Execute( reference );
-
+                   
+                    currentValueToReturn = result;
+                    
                     container.EndScope();
                 }
+                
                 return currentValueToReturn;
             }
             return null;
+        }
+
+        private dynamic ClassLibraryReference( ClassLibraryScope classScope, ClassReference ast, bool returnScope = false )
+        {
+            foreach( var reference in ast.Deferences )
+            {
+                switch( reference.AstType )
+                {
+                    case AstTypes.FunctionInvoke:
+                        return LibraryDispatcher.Invoke( classScope.Library, classScope.ClassDef, (FunctionInvoke)reference );
+                }
+            }
+            return null;
+        }
+
+        private void ValidateReference( AST reference, ClassScope classScope )
+        {
+            string keyName = reference.Token.TokenValue;
+            bool isProperty = true;
+            if( reference is FunctionInvoke )
+            {
+                var o = (FunctionInvoke)reference;
+                keyName = o.Name.TokenValue;
+                isProperty = false;
+            }
+
+            if( classScope.Memory.ContainsKey( keyName ) &&
+                classScope.Memory[keyName].AccessModifier != TokenType.Public )
+            {
+                string typeMessage = isProperty ? "property" : "method";
+                throw new InterpretorException( String.Format( "Cannot access {0}, {1} must be defined as public, {2} set in class {3}", keyName, typeMessage, classScope.Memory[keyName].AccessModifier.ToString().ToLower(), classScope.ClassAST.Name.TokenValue ) );
+            }
         }
     }
 

@@ -65,6 +65,7 @@ namespace KHash.Core.Compiler.Lexer
         Destruct,
         Private,
         Protected,
-        Public
+        Public,
+        Static
     }
 }

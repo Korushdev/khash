@@ -7,11 +7,13 @@ namespace KHash.Core.Compiler.Parser.AST
         public Token Name;
         public ScopeDeclr Body;
         public MagicMethods MagicMethods = new MagicMethods();
+        public bool IsStatic = false;
 
-        public ClassDeclr( Token name, ScopeDeclr scopeDeclr ) : base( new Token( TokenType.New ) )
+        public ClassDeclr( Token name, ScopeDeclr scopeDeclr, bool isStatic = false ) : base( new Token( TokenType.New ) )
         {
             Name = name;
             Body = scopeDeclr;
+            IsStatic = isStatic;
         }
 
         public override AstTypes AstType

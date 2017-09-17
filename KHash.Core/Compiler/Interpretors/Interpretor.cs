@@ -18,11 +18,14 @@ namespace KHash.Core.Compiler.Interpretors
         private OutputBuffer.OutputBuffer outputBuffer;
         private Container container;
         private OptionFactory optionFactory;
+        private Registry Libraries;
+        private Dispatcher LibraryDispatcher = new Dispatcher();
 
-        public Interpretor( OutputBuffer.OutputBuffer buffer )
+        public Interpretor( OutputBuffer.OutputBuffer buffer, Registry libraries )
         {
             this.outputBuffer = buffer;
             optionFactory = Factory.GetOptionFactory();
+            Libraries = libraries;
         }
 
         public void Start( AST ast )
@@ -136,16 +139,25 @@ namespace KHash.Core.Compiler.Interpretors
                 try
                 {
                     Execute( declaredFunction.Body );
-                    container.EndScope();
+                    HandleEndScopeForFunctionInvoking();
                 }
                 catch( ReturnValueException returnValueException )
                 {
-                    container.EndScope();
+                    HandleEndScopeForFunctionInvoking();
                     var type = returnValueException.Value.GetType();
                     return returnValueException.Value;
                 }
             }
             return null;
+        }
+
+        private void HandleEndScopeForFunctionInvoking()
+        {
+            var endedScope = container.EndScope();
+            if( endedScope.Parent is ClassScope )
+            {
+                container.Scopes.Push( endedScope );
+            }
         }
 
         private void SetArgumentsToMemory( Token functionName, List<AST> declaredArgument, List<AST> invokingArguments, Action startFunctionScope = null )
@@ -365,8 +377,23 @@ namespace KHash.Core.Compiler.Interpretors
             switch( ast.Token.TokenType )
             {
                 case TokenType.Equals:
-                    var current = container.Current();
-                    current.ResetMemoryValue( ast.Left, rightValue );
+                    if( ast.Left.AstType == AstTypes.ClassRef )
+                    {
+                        var classRef = ( ast.Left as ClassReference );
+
+                        var lastItem = classRef.Deferences.Last();
+
+                        var fakeRef = new ClassReference( classRef.ClassInstance,
+                                                         new List<AST>() { lastItem } );
+
+                        Scope.Scope scope = ClassReference( fakeRef, true );
+                        container.Assign( lastItem, rightValue, scope );
+                    }
+                    else
+                    {
+                        var current = container.Current();
+                        current.ResetMemoryValue( ast.Left, rightValue );
+                    }
 
                     break;
                 case TokenType.Match:

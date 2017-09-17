@@ -1,4 +1,5 @@
-﻿using System;
+﻿using KHash.Core.Compiler.Scope;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +19,11 @@ namespace KHash.Core.Compiler.OutputBuffer
         public object[] FetchOutput()
         {
             return outputLines.ToArray();
+        }
+
+        public void Append( ClassScope outputLine )
+        {
+            outputLines.Add( new ClassOutputDumper( outputLine ) );
         }
 
         public void Append( object outputLine )

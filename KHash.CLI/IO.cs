@@ -23,6 +23,11 @@ namespace KHash.CLI
             return File.ReadAllText( path );
         }
 
+        public byte[] ReadAllAsBytes( string path )
+        {
+            return File.ReadAllBytes( path );
+        }
+
         public void StreamReadByLine( string path, Action<string,int> callbackOnLine )
         {
             // Read the file and iterate it line by line.
@@ -40,6 +45,11 @@ namespace KHash.CLI
                     counter++;
                 }
             }
+        }
+
+        public void WriteBytes( byte[] bytes, string path )
+        {
+            File.WriteAllBytes( path, bytes );
         }
 
         public string CombinePath( params string[] paths )

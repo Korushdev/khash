@@ -23,6 +23,10 @@ namespace KHash.CLI
                     Compile compiler = new Compile( consoleEnvironment, ref outputBuffer );
 
                     compiler.Process();
+                    //if( compiler.Build() )
+                    //{
+                    //    compiler.Run();
+                    //}
 
                     object[] outputStrings = outputBuffer.FetchOutput();
                     consoleEnvironment.HandleOutput( outputStrings );
@@ -33,8 +37,20 @@ namespace KHash.CLI
                 string errorType = exception.GetType().ToString();
                 Console.WriteLine( errorType + " occured occured: " + exception.Message );
             }
-
             while( true ) { }
+        }
+    }
+
+    public class Bob
+    {
+        public Bob()
+        {
+
+        }
+
+        public static void Hello()
+        {
+
         }
     }
 }

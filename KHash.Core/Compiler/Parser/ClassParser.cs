@@ -31,10 +31,16 @@ namespace KHash.Core.Compiler.Parser
 
         private AST.AST ParseClassDecleration()
         {
+            bool isStatic = false;
+            if( tokenStream.Current.TokenType == TokenType.Static )
+            {
+                isStatic = true;
+                tokenStream.Take( TokenType.Static );
+            }
             tokenStream.Take( TokenType.Class );
             Token className = tokenStream.Take( TokenType.Word );
             var body = GetStatementsInScope( TokenType.LBracket, TokenType.RBracket, ClassInnerStatement );
-            ClassDeclr classDecleration = new ClassDeclr( className, body );
+            ClassDeclr classDecleration = new ClassDeclr( className, body, isStatic );
 
             SetMagicMethodsToClassDecleration( ref classDecleration, body );
 
@@ -70,7 +76,8 @@ namespace KHash.Core.Compiler.Parser
 
         private AST.AST MethodDecleration()
         {
-            if( IsValidAccessModifier() == false || tokenStream.Peek( 3 ).TokenType != TokenType.OpenParenth )
+            int expectedOpenParenthisisPos = 3;
+            if( IsValidAccessModifier() == false || tokenStream.Peek( expectedOpenParenthisisPos ).TokenType != TokenType.OpenParenth  )
             {
                 return null;
             }
@@ -81,8 +88,10 @@ namespace KHash.Core.Compiler.Parser
         private AST.AST ParseMethodDecleration()
         {
             var accessModifier = tokenStream.Take( tokenStream.Current.TokenType );
+
             if( IsValidMethodReturnType() )
             {
+                //Take the type
                 var type = tokenStream.Take( tokenStream.Current.TokenType );
 
                 var functionName = tokenStream.Take( TokenType.Word );
@@ -124,13 +133,21 @@ namespace KHash.Core.Compiler.Parser
                             if( classDecleration.MagicMethods.Constructor != null )
                             {
                                 throw new MethodException( "Init is already defined" );
+                            }else if ( classDecleration.IsStatic )
+                            {
+                                throw new MethodException( "Static classes cannot contain Init functions" );
                             }
+                            
                             classDecleration.MagicMethods.Constructor = (MagicMethodDeclr)ast;
                             break;
                         case TokenType.Destruct:
                             if( classDecleration.MagicMethods.Destructor != null )
                             {
                                 throw new MethodException( "Destroy is already defined" );
+                            }
+                            else if( classDecleration.IsStatic )
+                            {
+                                throw new MethodException( "Static classes cannot contain Destroy functions" );
                             }
                             classDecleration.MagicMethods.Destructor = (MagicMethodDeclr)ast;
                             break;

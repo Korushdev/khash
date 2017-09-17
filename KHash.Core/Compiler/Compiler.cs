@@ -5,6 +5,8 @@ using KHash.Core.Compiler.Parser;
 using KHash.Core.Compiler.Parser.AST;
 using KHash.Core.Environment;
 using KHash.Core.Exceptions;
+using KHash.Core.Libraries.StdLib;
+using MessagePack;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,6 +24,8 @@ namespace KHash.Core.Compiler
 
         string rawLines = "";
 
+        Registry registry;
+
         public Compiler( IEnvironment env, ref Buffer output )
         {
             optionFactory = Factory.GetOptionFactory();
@@ -32,7 +36,8 @@ namespace KHash.Core.Compiler
 
         private void Initialize()
         {
-            //IntializeRawCode();            
+            registry = new Registry();
+            registry.Register( new StandardLibrary() );
         }
 
         private void IntializeRawCode()
@@ -56,52 +61,57 @@ namespace KHash.Core.Compiler
             }
         }
 
-        public void Build()
+        public bool Build()
         {
-            List<Token> tokens = new Lexer.Lexer( rawLines ).Lex().ToList();            
-            KHashParser parser = new KHashParser( tokens );
-            var ast = parser.Parse();
-            
-            // Construct a BinaryFormatter and use it to serialize the data to the stream.
-            BinaryConverter converter = new BinaryConverter();
+            AST ast = GetASTTree( rawLines );
 
-            var size = Marshal.SizeOf( ast );
-            // Both managed and unmanaged buffers required.
-            var bytes = new byte[size];
-            var ptr = Marshal.AllocHGlobal( size );
-            // Copy object byte-to-byte to unmanaged memory.
-            Marshal.StructureToPtr( ast, ptr, false );
-            // Copy data from unmanaged memory to managed buffer.
-            Marshal.Copy( ptr, bytes, 0, size );
-            // Release unmanaged memory.
-            Marshal.FreeHGlobal( ptr );
+            byte[] byteArray = MessagePackSerializer.Serialize( ast );
 
-            File.WriteAllBytes( "DataFile.dat", bytes );
+            this.environment.GetIO().WriteBytes( byteArray, "Build.dat" );
+
+            return true;
         }
 
         public void Run()
         {
-            Interpretor interpretor = new Interpretor( outputBuffer );
-
-            byte[] byteArray = File.ReadAllBytes( "DataFile.dat" );
-            BinaryConverter converter = new BinaryConverter();
-
-            var ast = converter.Deserialize<AST>( byteArray );
-            interpretor.Start( ast );
+            byte[] byteArray = this.environment.GetIO().ReadAllAsBytes( "Build.dat" );
+            var ast = MessagePackSerializer.Deserialize<AST>( byteArray );
+            Interpret( ast );
         }
 
         public void Process()
         {
-            List<Token> tokens = new Lexer.Lexer( rawLines ).Lex().ToList();
+            string rawLines = @"
+class Dog
+{
+    public int i = 12;
+    private string name = 'Einstein';
 
+    public int GetName()
+    {
+        return name;
+    }
+}
+Dog d = new Dog();
+send d.GetName();
+send d;
+";
 
-            KHashParser parser = new KHashParser( tokens );
-            var ast = parser.Parse();
+            AST ast = GetASTTree( rawLines );
+            Interpret( ast );
+        }
 
-            Interpretor interpretor = new Interpretor( outputBuffer );
-
+        public void Interpret( AST ast )
+        {
+            Interpretor interpretor = new Interpretor( outputBuffer, registry );
             interpretor.Start( ast );
+        }
 
+        public AST GetASTTree( string lines )
+        {
+            List<Token> tokens = new Lexer.Lexer( lines ).Lex().ToList();
+            KHashParser parser = new KHashParser( tokens );
+            return parser.Parse();
         }
     }
 }

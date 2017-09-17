@@ -1,4 +1,5 @@
 ﻿using KHash.Core.Compiler.Lexer;
+using MessagePack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,27 +28,20 @@ namespace KHash.Core.Compiler.Parser.AST
         ClassInvoke,
         ClassRef
     }
-
+    
+    [Union( 0, typeof( ScopeDeclr ) )]
+    [MessagePackObject]
     public abstract class AST
     {
+        [Key(0)]
         public Token Token { get; set; }
-
-        public List<AST> Children { get; private set; }
         
         public AST( Token token )
         {
             Token = token;
-            Children = new List<AST>();
-        }
-
-        public void AddChild( AST child )
-        {
-            if( child != null )
-            {
-                Children.Add( child );
-            }
         }
         
+        [Key(2)]
         public abstract AstTypes AstType { get; }
     }
 }
