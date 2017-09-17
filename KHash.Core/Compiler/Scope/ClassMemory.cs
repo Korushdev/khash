@@ -12,11 +12,15 @@ namespace KHash.Core.Compiler.Scope
         public ClassDeclr ClassAST { get; set; }
 
         public bool IsInstantiated = false;
+
+        public ClassScope( Container c, string n = "" ) : base( c, n ) { }
     }
 
     public class ClassLibraryScope : ClassScope
     {
         public AbstractClass ClassDef { get; set; }
         public ILibrary Library { get; set; }
+
+        public ClassLibraryScope( Container c, string n = "" ) : base( c, n ) { }
     }
 }

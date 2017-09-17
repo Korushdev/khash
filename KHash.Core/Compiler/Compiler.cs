@@ -82,19 +82,8 @@ namespace KHash.Core.Compiler
         public void Process()
         {
             string rawLines = @"
-class Dog
-{
-    public int i = 12;
-    private string name = 'Einstein';
-
-    public int GetName()
-    {
-        return name;
-    }
-}
-Dog d = new Dog();
-send d.GetName();
-send d;
+string someFileData = 'hello world';
+File.Write('Something/bob.txt', someFileData );
 ";
 
             AST ast = GetASTTree( rawLines );

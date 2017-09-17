@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace KHash.Core.Libraries.StdLib.Date
+namespace KHash.Core.Libraries.StdLib.Environment
 {
     public class DateTime : AbstractClass, IStdLib
     {
@@ -26,7 +26,7 @@ namespace KHash.Core.Libraries.StdLib.Date
             return "DateTime";
         }
 
-        public override dynamic InvokeMethod( MethodDef definition, object arguments )
+        public override dynamic InvokeMethod( MethodDef definition, List<object> arguments )
         {
             switch( definition.Name )
             {

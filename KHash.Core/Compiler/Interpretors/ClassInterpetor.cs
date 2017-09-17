@@ -15,7 +15,7 @@ namespace KHash.Core.Compiler.Interpretors
     {
         private void ClassDecleration( ClassDeclr ast )
         {
-            ClassScope classScope = new ClassScope()
+            ClassScope classScope = new ClassScope( this.container, ast.Token.TokenValue+" Class decleration")
             {
                 Type = ast.Name.TokenValue,
                 ClassAST = ast
@@ -26,13 +26,13 @@ namespace KHash.Core.Compiler.Interpretors
             {
                 classScope.IsInstantiated = true;
                 SettingClassScope( classScope );
-                var s = container.EndScope();
+                var s = container.Current.EndScope();
 
-                container.Current().SetMemoryValue( classScope.Type, s.Parent);
+                container.Current.SetMemoryValue( classScope.Type, s.Parent);
             }
             else
             {
-                container.Current().SetMemoryValue( classScope.Type, classScope );
+                container.Current.SetMemoryValue( classScope.Type, classScope );
             }
         }
 
@@ -54,7 +54,8 @@ namespace KHash.Core.Compiler.Interpretors
                     SettingClassScope( classScope );
                 }
 
-                return container.EndScope().Parent;
+                var endedClassScope = container.Current.EndScope();
+                return endedClassScope.ParentClassScope;
             }
 
             return null;
@@ -66,7 +67,7 @@ namespace KHash.Core.Compiler.Interpretors
 
             if( tuple != null )
             {
-                ClassLibraryScope classScope = new ClassLibraryScope()
+                ClassLibraryScope classScope = new ClassLibraryScope( this.container, "Calling class lib"+name )
                 {
                     IsInstantiated = true,
                     Type = tuple.Item2.GetName(),
@@ -87,11 +88,8 @@ namespace KHash.Core.Compiler.Interpretors
                 return libraryClass;
             }
             var className = name.TokenValue;
-            var value = container.Current().GetMemoryValue( className );
-            if( value == null )
-            {
-                value = container.Global().GetMemoryValue( className );
-            }
+            var value = container.Current.GetMemoryValue( className );
+            
 
             if( value is ClassScope )
             {
@@ -116,7 +114,7 @@ namespace KHash.Core.Compiler.Interpretors
                 Value = castedValue,
                 AccessModifier = ast.AccessModifier.TokenType
             };
-            container.Current().SetMemoryValue( symbol, memoryValue, true );
+            container.Current.SetMemoryValue( symbol, memoryValue, true );
         }
 
         public void MethodDecleration( MethodDeclr ast )
@@ -127,13 +125,13 @@ namespace KHash.Core.Compiler.Interpretors
                 Value = ast,
                 AccessModifier = ast.AccessModifier.TokenType
             };
-            container.Current().SetMemoryValue( ast.Name.TokenValue, memoryValue, true);
+            container.Current.SetMemoryValue( ast.Name.TokenValue, memoryValue, true);
         }
 
         public void SettingClassScope( ClassScope classScope )
         {
-            var current = container.StartScope();
-            current.Parent = classScope.DeepClone();
+            var current = container.Current.StartScope();
+            current.ParentClassScope = classScope.DeepClone();
 
             classScope.ClassAST.Body.ScopedStatements.ForEach( statement =>
             {
@@ -184,12 +182,26 @@ namespace KHash.Core.Compiler.Interpretors
                     //check if ref is public
                     ValidateReference( reference, classScope );
                     
-                    Scope.Scope newScope = new Scope.Scope();
-                    newScope.Parent = classScope;
-                    container.StartScope( newScope );
+                    Scope.Scope newScope = new Scope.Scope( this.container, "Ref: "+ast.Token.TokenValue+" class");
+                    newScope.ParentClassScope = classScope;
+                    container.Current.StartScope( newScope );
 
-                    var result = Execute( reference );
-                    var resultingScope = container.Scopes.Peek().Parent;
+                    object resultingScope = null;
+                    try
+                    {
+                        var result = Execute( reference );
+
+                        currentValueToReturn = result;
+                        resultingScope = container.Current.ParentClassScope;
+                    }
+                    catch( ParentScopeReturnException resultingScopeException )
+                    {
+                        resultingScope = resultingScopeException.Value;
+                    }
+
+
+                    container.Current.EndScope();
+
                     if( returnScope )
                     {
                         return resultingScope;
@@ -198,18 +210,11 @@ namespace KHash.Core.Compiler.Interpretors
                     {
                         classScope = (ClassScope)resultingScope;
                         string className = ast.Token.TokenValue;
-                        if( container.Current().GetMemoryValue( className ) != null )
+                        if( container.Current.GetMemoryValue( className ) != null )
                         {
-                            container.Current().SetMemoryValue( className,classScope );
-                        }else if( container.Global().GetMemoryValue( className ) != null  )
-                        {
-                            container.Global().SetMemoryValue( className, classScope );
+                            container.Current.SetMemoryValue( className,classScope );
                         }
                     }
-                   
-                    currentValueToReturn = result;
-                    
-                    container.EndScope();
                 }
                 
                 return currentValueToReturn;

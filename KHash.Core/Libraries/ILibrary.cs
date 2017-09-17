@@ -8,6 +8,6 @@ namespace KHash.Core.Libraries
     public interface ILibrary
     {
         AbstractClass GetClass( Token name );
-        dynamic InvokeClassMethod( AbstractClass classDef, MethodDef method, object arguments );
+        dynamic InvokeClassMethod( AbstractClass classDef, MethodDef method, List<object> arguments );
     }
 }

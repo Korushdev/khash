@@ -13,10 +13,13 @@ namespace KHash.Core.Libraries.StdLib
 
         public void Initialise()
         {
-            RegisterClass( new Date.DateTime() );
+            RegisterClass( new Environment.DateTime() );
+
+            RegisterClass( new IO.File() );
+            RegisterClass( new IO.Directory() );
         }
 
-        public dynamic InvokeClassMethod( AbstractClass classDef, MethodDef method, object arguments )
+        public dynamic InvokeClassMethod( AbstractClass classDef, MethodDef method, List<object> arguments )
         {
 
             return classDef.InvokeMethod( method, arguments );

@@ -11,6 +11,7 @@ namespace KHash.Core.Compiler.TypeChecker
         Double,
         Decimal,
         String,
-        Boolean
+        Boolean,
+        Void
     }
 }

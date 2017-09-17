@@ -19,13 +19,14 @@ namespace KHash.Core.Compiler.Interpretors
         private Container container;
         private OptionFactory optionFactory;
         private Registry Libraries;
-        private Dispatcher LibraryDispatcher = new Dispatcher();
+        private Dispatcher LibraryDispatcher;
 
         public Interpretor( OutputBuffer.OutputBuffer buffer, Registry libraries )
         {
             this.outputBuffer = buffer;
             optionFactory = Factory.GetOptionFactory();
             Libraries = libraries;
+            LibraryDispatcher = new Dispatcher( this );
         }
 
         public void Start( AST ast )
@@ -108,7 +109,7 @@ namespace KHash.Core.Compiler.Interpretors
                 }
             }catch( Exception e )
             {
-                if( e is InterpretorException || e is ReturnValueException)
+                if( e is InterpretorException || e is ReturnValueException || e is ParentScopeReturnException)
                 {
                     throw e;
                 }
@@ -123,13 +124,13 @@ namespace KHash.Core.Compiler.Interpretors
 
         public void FunctionDecleration( FunctionDeclr ast )
         {
-            container.Current().SetMemoryValue( ast.Name.TokenValue, ast );
+            container.Current.SetMemoryValue( ast.Name.TokenValue, ast );
         }
 
         public dynamic FunctionInvoke( FunctionInvoke ast )
         {
             var functionName = ast.Name.TokenValue;
-            var value = container.Current().GetMemoryValue( functionName );
+            var value = container.Current.GetMemoryValue( functionName );
             if( value != null && value is FunctionDeclr )
             {
                 FunctionDeclr declaredFunction = (FunctionDeclr)value;
@@ -143,7 +144,7 @@ namespace KHash.Core.Compiler.Interpretors
                 }
                 catch( ReturnValueException returnValueException )
                 {
-                    HandleEndScopeForFunctionInvoking();
+                    HandleEndScopeForFunctionInvoking( false );
                     var type = returnValueException.Value.GetType();
                     return returnValueException.Value;
                 }
@@ -151,12 +152,12 @@ namespace KHash.Core.Compiler.Interpretors
             return null;
         }
 
-        private void HandleEndScopeForFunctionInvoking()
+        private void HandleEndScopeForFunctionInvoking( bool throwParentScope = true )
         {
-            var endedScope = container.EndScope();
-            if( endedScope.Parent is ClassScope )
+            var endedScope = container.Current.EndScope();
+            if( throwParentScope && endedScope.ParentClassScope is ClassScope )
             {
-                container.Scopes.Push( endedScope );
+                throw new ParentScopeReturnException( (ClassScope)endedScope.ParentClassScope );
             }
         }
 
@@ -175,13 +176,13 @@ namespace KHash.Core.Compiler.Interpretors
             //Set scope start here
             if( startFunctionScope == null )
             {
-                Scope.Scope current = container.Current();
-                Scope.Scope newScope = container.StartScope();
+                Scope.Scope current = container.Current;
+                Scope.Scope newScope = current.StartScope();
 
-                if( current.Parent != null && current.Parent is ClassScope )
+                if( current.ParentClassScope != null && current.ParentClassScope is ClassScope )
                 {
-                    ClassScope classScope = (ClassScope)current.Parent;
-                    newScope.Parent = classScope.DeepClone();
+                    ClassScope classScope = (ClassScope)current.ParentClassScope;
+                    newScope.ParentClassScope = classScope.DeepClone();
                 }
             }
             else
@@ -196,7 +197,7 @@ namespace KHash.Core.Compiler.Interpretors
                 {
                     var functionArgVal = Execute( functionArg.VariableValue );
                     var symbol = functionArg.Token.TokenValue;
-                    container.Current().SetMemoryValue( symbol, TypeHelper.CastByString( functionArg.DeclarationType.Token.TokenValue, functionArgVal ) );
+                    container.Current.SetMemoryValue( symbol, TypeHelper.CastByString( functionArg.DeclarationType.Token.TokenValue, functionArgVal ) );
                 }
             }
 
@@ -207,7 +208,7 @@ namespace KHash.Core.Compiler.Interpretors
                 if( functionArg != null )
                 {
                     var symbol = functionArg.Token.TokenValue;
-                    container.Current().SetMemoryValue( symbol, TypeHelper.CastByString( functionArg.DeclarationType.Token.TokenValue, invokedArgValues[c] ) );
+                    container.Current.SetMemoryValue( symbol, TypeHelper.CastByString( functionArg.DeclarationType.Token.TokenValue, invokedArgValues[c] ) );
                 }
                 else
                 {
@@ -243,7 +244,7 @@ namespace KHash.Core.Compiler.Interpretors
             int maxIteration = Convert.ToInt32( optionFactory.GetOption( OptionKey.KHASH_MAX_ITERATIONS ) );
             Execute( condition.InitStatement );
 
-            for( container.Current().GetMemoryValue( condition.InitStatement ); Convert.ToBoolean( Execute( condition.Condition ) ); Execute( condition.IteratedExpression ) )
+            for( container.Current.GetMemoryValue( condition.InitStatement ); Convert.ToBoolean( Execute( condition.Condition ) ); Execute( condition.IteratedExpression ) )
             {
                 Execute( condition.Body );
                 iteration++;
@@ -310,7 +311,7 @@ namespace KHash.Core.Compiler.Interpretors
 
             var symbol = ast.VariableName.Token.TokenValue;
 
-            container.Current().SetMemoryValue( symbol, TypeHelper.CastByString( ast.DeclarationType.Token.TokenValue, value ) );
+            container.Current.SetMemoryValue( symbol, TypeHelper.CastByString( ast.DeclarationType.Token.TokenValue, value ) );
         }
 
         private void Send( SendAST ast )
@@ -356,7 +357,7 @@ namespace KHash.Core.Compiler.Interpretors
                     return false;
             }
 
-            var current = container.Current();
+            var current = container.Current;
             var value = current.GetMemoryValue( item );
             if( value != null )
             {
@@ -391,7 +392,7 @@ namespace KHash.Core.Compiler.Interpretors
                     }
                     else
                     {
-                        var current = container.Current();
+                        var current = container.Current;
                         current.ResetMemoryValue( ast.Left, rightValue );
                     }
 
@@ -408,7 +409,7 @@ namespace KHash.Core.Compiler.Interpretors
                     {
                         int incrIniValue = leftValue++;
                         var symbol = ast.Left.Token.TokenValue;
-                        container.Current().SetMemoryValue( symbol, leftValue );
+                        container.Current.SetMemoryValue( symbol, leftValue );
                         return incrIniValue;
                     }
 
@@ -417,7 +418,7 @@ namespace KHash.Core.Compiler.Interpretors
                     {
                         ++rightValue;
                         var symbol = ast.Right.Token.TokenValue;
-                        container.Current().SetMemoryValue( symbol, rightValue );
+                        container.Current.SetMemoryValue( symbol, rightValue );
                         return rightValue;
                     }
 
@@ -428,7 +429,7 @@ namespace KHash.Core.Compiler.Interpretors
                     {
                         int decIniValue = leftValue--;
                         var symbol = ast.Left.Token.TokenValue;
-                        container.Current().SetMemoryValue( symbol, leftValue );
+                        container.Current.SetMemoryValue( symbol, leftValue );
                         return decIniValue;
                     }
 
@@ -437,7 +438,7 @@ namespace KHash.Core.Compiler.Interpretors
                     {
                         --rightValue;
                         var symbol = ast.Right.Token.TokenValue;
-                        container.Current().SetMemoryValue( symbol, rightValue );
+                        container.Current.SetMemoryValue( symbol, rightValue );
                         return rightValue;
                     }
 
@@ -487,6 +488,15 @@ namespace KHash.Core.Compiler.Interpretors
     {
         public object Value;
         public ReturnValueException( object val )
+        {
+            Value = val;
+        }
+    }
+
+    public class ParentScopeReturnException : Exception
+    {
+        public ClassScope Value;
+        public ParentScopeReturnException( ClassScope val )
         {
             Value = val;
         }

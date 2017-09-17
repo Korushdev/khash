@@ -15,6 +15,6 @@ namespace KHash.Core.Libraries
 
         public abstract string GetName();
         public abstract List<MethodDef> GetMethods();
-        public abstract dynamic InvokeMethod( MethodDef definition, object arguments );
+        public abstract dynamic InvokeMethod( MethodDef definition, List<object> arguments );
     }
 }
